@@ -978,6 +978,11 @@ DO n=1,ntiles
             pstar_land,land_pts,lq_mix_bl)
 END DO
 
+print *, ""
+print *, ""
+print *, "jhan:sf_exch_jls"
+print *, ""
+print *, ""
 !-----------------------------------------------------------------------
 !!  3. Calculation of transfer coefficients and surface layer stability
 !-----------------------------------------------------------------------

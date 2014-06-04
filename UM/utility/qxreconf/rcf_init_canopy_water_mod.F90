@@ -88,6 +88,9 @@ TYPE (field_type)                    :: mean_canopyw_out
 TYPE (field_type)                    :: dummy  ! pretend orography
 INTEGER                              :: pos    ! field position
 INTEGER                              :: i      ! looper
+!jhan: deal with this hard-wiring
+INTEGER, parameter                   :: iurban=15 ! CABLE
+INTEGER, parameter                   :: npft=13 ! CABLE
 
 
 !----------------------------------------------------------------------

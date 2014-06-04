@@ -357,7 +357,7 @@
 
       USE Submodel_Mod
       
-      use cable_data_mod, only : cable_atmos_physics2      
+      use cable_data_mod, only : cable_control2      
   
       IMPLICIT NONE
 !
@@ -4887,6 +4887,13 @@ DEALLOCATE(f_ngstress_v)
           END IF
         END DO
       END DO
+
+print *, ""
+print *, ""
+print *, "jhan:pre ni_imp_ctl: STOP"
+print *, ""
+print *, ""
+STOP
 
 ! DEPENDS ON: ni_imp_ctl
       Call NI_imp_ctl (                                                 &

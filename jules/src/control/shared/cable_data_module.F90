@@ -406,11 +406,11 @@ end subroutine set_endstep_umodel
 !                          GS, canopy_water,  land_alb )
 
 SUBROUTINE cable_control( UM_eq_TRUE, L_cable, a_step, timestep_len, row_length,     &
-             rows, land_pts, ntiles, sm_levels, dim_cs1, dim_cs2,              &
-             latitude, longitude,                                              &
-             land_index, b, hcon, satcon, sathh, smvcst, smvcwt, smvccl,       &
-             albsoil, lw_down, cosz, ls_rain, ls_snow, pstar, CO2_MMR,         &
-             sthu, smcl, sthf, GS, canopy_gb , land_albedo )
+             rows, land_pts, ntiles, sm_levels)!, dim_cs1, dim_cs2,              &
+!             latitude, longitude,                                              &
+!             land_index, b, hcon, satcon, sathh, smvcst, smvcwt, smvccl,       &
+!             albsoil, lw_down, cosz, ls_rain, ls_snow, pstar, CO2_MMR,         &
+!             sthu, smcl, sthf, GS, canopy_gb , land_albedo )
 
    LOGICAL, target ::                                                          &
       UM_eq_TRUE,    & !
@@ -428,179 +428,179 @@ SUBROUTINE cable_control( UM_eq_TRUE, L_cable, a_step, timestep_len, row_length,
       ntiles,        &
       sm_levels,        &
       dim_cs1, dim_cs2
-   ! vn8.6
-   integer, target::                                              &
-      timestep_len
-
+!   ! vn8.6
+!   integer, target::                                              &
+!      timestep_len
+!
    REAL, target::                                              &
-      !timestep_len, &
-      co2_mmr
-   
-   INTEGER, DIMENSION(:), target::                                              &
-      land_index
-   
-   ! vn8.6
-   REAL, DIMENSION(:,:), target ::                                         &
-      pstar, &
-      land_albedo 
- 
-   !REAL, DIMENSION(:,:,:), target ::                                         &
-   !   land_albedo 
- 
-   REAL, DIMENSION(:), TARGET :: &
-     albsoil, &
-     cosz,    &
-     canopy_gb, &
-     GS 
-
-   !REAL, DIMENSION(:), TARGET :: &
-   REAL, DIMENSION(:,:), TARGET :: &
-      !albsoil, &
-      b, &    !
-      hcon, &    !
-      satcon, &
-      sathh, &
-      smvcst, &
-      smvcwt, &
-      smvccl!, &
-      !canopy_gb
- 
-   ! vn8.2 had
-   !REAL, DIMENSION(:), TARGET :: &
-   !   soil_alb, &
-   !   clapp_horn, &    !
-   !   therm_cond, &    !
-   !   SAT_SOIL_COND, &
-   !   SAT_SOILW_SUCTION, &
-   !   VOL_SMC_criT,&
-   !   VOL_SMC_WILT, &
-   !   VOL_SMC_saT, &
-   !   canopy_water, &
-   !   GS 
- 
-   REAL, DIMENSION(:,:), TARGET:: &
-     lw_down, &
-     ! vn 8.2 had cos_zenith_angle here
-     !cosz, &
-     ls_rain, &
-     ls_snow, & 
-     sthu, &
-     smcl, &
-     sthf
-                           
-   REAL, DIMENSION(:,:), TARGET :: &
-      latitude, longitude
-
-   REAL, DIMENSION(:,:), TARGET, ALLOCATABLE :: &
-      flatitude, flongitude
-
-   !---------------------------------------------------------------------------
-   !local vars
-   
-   LOGICAL :: first_atmstep_call
-   
-   integer :: i,j, k,n
-   
-   !---------------------------------------------------------------------------
-   !vn8.6 intros
-   if( a_step == 1) first_atmstep_call = .TRUE. 
-   ! vn8.6 some differences herewhat is allocated etc
-   if( first_atmstep_call ) then 
-      if( UM_eq_TRUE) then
-         allocate( flatitude(row_length,rows) )
-         allocate( flongitude(row_length,rows) )
-      endif
-      allocate( cable% um% sin_theta_latitude(row_length,rows) )
-      allocate( cable% cable% SNOW_COND(land_pts,NTILES,3))
-      allocate( cable% cable% STHU_TILE(land_pts,NTILES,sm_levels))
-      allocate( cable% tmp% L_TILE_PTS(land_pts,NTILES))
-      !this can be deleted once rm from cable_explicit_driver (call/recieve )
-      allocate( cable% um% SW_DOWN(row_length,rows)           )
-      allocate( cable% forcing% ShortWave(row_length,rows,4)    )
-      allocate( cable% um% TILE_INDEX(land_pts,NTiles) ) 
-      allocate( cable% um% TILE_PTS(NTiles) )  
-      allocate( cable% um% TOT_ALB(land_pts,ntiles)        )
-   endif
-   !vn 8.6 we didnt use this typecasting through calls
-   !call cable_parse_isnow( land_pts, ntiles, snow_flg3l,                       &
-   !        tsoil_tile, smcl_tile, sthf_tile,                                   &
-   !        snow_depth3l, snow_mass3l, snow_tmp3l,                              & 
-   !        snow_rho3l, snow_rho1l, snow_age ) 
-  
-      cable% um% L_cable            => L_cable
-      ! vn8.6 some revisions and renaming
-      !cable% mp% mype               => mype
-      cable% mp% endstep            => endstep     
-      cable% mp% timestep_number    => a_step
-      cable% mp% timestep_width     => timestep_len
-      cable% mp% row_length         => row_length 
-      cable% mp% rows               => rows        
-      cable% mp% land_pts           => land_pts
-      cable% mp% ntiles             => ntiles
-      cable% mp% sm_levels          => sm_levels
-      
-      cable% um% dim_cs1           => dim_cs1
-      cable% um% dim_cs2           => dim_cs2
-      ! vn8.6 uses theseCABLE prognostics
-      cable% cable% tsoil_tile       => soil_temp_CABLE
-      cable% cable% smcl_tile        => smcl_CABLE
-      cable% cable% sthf_tile        => sthf_CABLE
-      cable% cable% snow_depth3l     => snow_depth_CABLE
-      cable% cable% snow_mass3l      => snow_mass_CABLE
-      cable% cable% snow_tmp3l       => snow_temp_CABLE
-      cable% cable% snow_rho3l       => snow_rho_CABLE
-      cable% cable% snow_flg3l       => snow_flg3l_CABLE
-      cable% cable% snow_rho1l       => snow_rho1l_CABLE
-      cable% cable% snow_age         => snow_age_CABLE
-
-      !jhan: re-implement sin_theta_lat by computing here      
-      if( UM_eq_TRUE) then
-         flatitude  = asin( latitude )
-         flongitude = acos( longitude )
-      endif
-      cable% mp% latitude           => flatitude
-      cable% mp% longitude          => flongitude
-
-
-      cable% um% sin_theta_latitude = sin( cable% mp% latitude )
-
-      cable% um% land_index         => land_index 
-
-      cable% um% sthu             => sthu        
-      
-      cable% um% sthf             => sthf        
-      cable% um% smcl             => smcl        
-      
-      cable% um% land_alb         => land_albedo   
-          
-
-      !vn8.6 uses some different names morereflective of names in UM
-      cable% um% bexp     => b 
-      cable% um% hcon     => hcon
-      cable% um% satcon   => satcon
-      cable% um% sathh    => sathh
-      cable% um% smvcst   => smvcst  
-      cable% um% smvcwt   => smvcwt  
-      cable% um% smvccl   => smvccl  
-      cable% um% albsoil  => albsoil 
-      
-      cable% um% pstar => pstar 
-
-      cable% um% lw_down   => lw_down
-      cable% um% cos_zenith_angle   => cosz
-      cable% um% ls_rain     => ls_rain 
-      cable% um% ls_snow      => ls_snow
-      cable% um% co2_mmr      => co2_mmr
-
-      cable% um% gs => gs
-      cable% um% canopy_gb => canopy_gb
-
-      cable% cable% snow_cond = -huge(1.)
-      cable% cable% sthu_tile = -huge(1.)
-      cable% tmp% l_tile_pts = .false.
-      !vn8.6 intros
-      cable% tmp% Epsilon = 0.62198 
-      cable% tmp% c_virtual =  1. / cable% tmp% Epsilon - 1. 
+      timestep_len!, &
+!      co2_mmr
+!   
+!   INTEGER, DIMENSION(:), target::                                              &
+!      land_index
+!   
+!   ! vn8.6
+!   REAL, DIMENSION(:,:), target ::                                         &
+!      pstar, &
+!      land_albedo 
+! 
+!   !REAL, DIMENSION(:,:,:), target ::                                         &
+!   !   land_albedo 
+! 
+!   REAL, DIMENSION(:), TARGET :: &
+!     albsoil, &
+!     cosz,    &
+!     canopy_gb, &
+!     GS 
+!
+!   !REAL, DIMENSION(:), TARGET :: &
+!   REAL, DIMENSION(:,:), TARGET :: &
+!      !albsoil, &
+!      b, &    !
+!      hcon, &    !
+!      satcon, &
+!      sathh, &
+!      smvcst, &
+!      smvcwt, &
+!      smvccl!, &
+!      !canopy_gb
+! 
+!   ! vn8.2 had
+!   !REAL, DIMENSION(:), TARGET :: &
+!   !   soil_alb, &
+!   !   clapp_horn, &    !
+!   !   therm_cond, &    !
+!   !   SAT_SOIL_COND, &
+!   !   SAT_SOILW_SUCTION, &
+!   !   VOL_SMC_criT,&
+!   !   VOL_SMC_WILT, &
+!   !   VOL_SMC_saT, &
+!   !   canopy_water, &
+!   !   GS 
+! 
+!   REAL, DIMENSION(:,:), TARGET:: &
+!     lw_down, &
+!     ! vn 8.2 had cos_zenith_angle here
+!     !cosz, &
+!     ls_rain, &
+!     ls_snow, & 
+!     sthu, &
+!     smcl, &
+!     sthf
+!                           
+!   REAL, DIMENSION(:,:), TARGET :: &
+!      latitude, longitude
+!
+!   REAL, DIMENSION(:,:), TARGET, ALLOCATABLE :: &
+!      flatitude, flongitude
+!
+!   !---------------------------------------------------------------------------
+!   !local vars
+!   
+!   LOGICAL :: first_atmstep_call
+!   
+!   integer :: i,j, k,n
+!   
+!   !---------------------------------------------------------------------------
+!   !vn8.6 intros
+!   if( a_step == 1) first_atmstep_call = .TRUE. 
+!   ! vn8.6 some differences herewhat is allocated etc
+!   if( first_atmstep_call ) then 
+!      if( UM_eq_TRUE) then
+!         allocate( flatitude(row_length,rows) )
+!         allocate( flongitude(row_length,rows) )
+!      endif
+!      allocate( cable% um% sin_theta_latitude(row_length,rows) )
+!      allocate( cable% cable% SNOW_COND(land_pts,NTILES,3))
+!      allocate( cable% cable% STHU_TILE(land_pts,NTILES,sm_levels))
+!      allocate( cable% tmp% L_TILE_PTS(land_pts,NTILES))
+!      !this can be deleted once rm from cable_explicit_driver (call/recieve )
+!      allocate( cable% um% SW_DOWN(row_length,rows)           )
+!      allocate( cable% forcing% ShortWave(row_length,rows,4)    )
+!      allocate( cable% um% TILE_INDEX(land_pts,NTiles) ) 
+!      allocate( cable% um% TILE_PTS(NTiles) )  
+!      allocate( cable% um% TOT_ALB(land_pts,ntiles)        )
+!   endif
+!   !vn 8.6 we didnt use this typecasting through calls
+!   !call cable_parse_isnow( land_pts, ntiles, snow_flg3l,                       &
+!   !        tsoil_tile, smcl_tile, sthf_tile,                                   &
+!   !        snow_depth3l, snow_mass3l, snow_tmp3l,                              & 
+!   !        snow_rho3l, snow_rho1l, snow_age ) 
+!  
+!      cable% um% L_cable            => L_cable
+!      ! vn8.6 some revisions and renaming
+!      !cable% mp% mype               => mype
+!      cable% mp% endstep            => endstep     
+!      cable% mp% timestep_number    => a_step
+!      cable% mp% timestep_width     => timestep_len
+!      cable% mp% row_length         => row_length 
+!      cable% mp% rows               => rows        
+!      cable% mp% land_pts           => land_pts
+!      cable% mp% ntiles             => ntiles
+!      cable% mp% sm_levels          => sm_levels
+!      
+!      cable% um% dim_cs1           => dim_cs1
+!      cable% um% dim_cs2           => dim_cs2
+!      ! vn8.6 uses theseCABLE prognostics
+!      cable% cable% tsoil_tile       => soil_temp_CABLE
+!      cable% cable% smcl_tile        => smcl_CABLE
+!      cable% cable% sthf_tile        => sthf_CABLE
+!      cable% cable% snow_depth3l     => snow_depth_CABLE
+!      cable% cable% snow_mass3l      => snow_mass_CABLE
+!      cable% cable% snow_tmp3l       => snow_temp_CABLE
+!      cable% cable% snow_rho3l       => snow_rho_CABLE
+!      cable% cable% snow_flg3l       => snow_flg3l_CABLE
+!      cable% cable% snow_rho1l       => snow_rho1l_CABLE
+!      cable% cable% snow_age         => snow_age_CABLE
+!
+!      !jhan: re-implement sin_theta_lat by computing here      
+!      if( UM_eq_TRUE) then
+!         flatitude  = asin( latitude )
+!         flongitude = acos( longitude )
+!      endif
+!      cable% mp% latitude           => flatitude
+!      cable% mp% longitude          => flongitude
+!
+!
+!      cable% um% sin_theta_latitude = sin( cable% mp% latitude )
+!
+!      cable% um% land_index         => land_index 
+!
+!      cable% um% sthu             => sthu        
+!      
+!      cable% um% sthf             => sthf        
+!      cable% um% smcl             => smcl        
+!      
+!      cable% um% land_alb         => land_albedo   
+!          
+!
+!      !vn8.6 uses some different names morereflective of names in UM
+!      cable% um% bexp     => b 
+!      cable% um% hcon     => hcon
+!      cable% um% satcon   => satcon
+!      cable% um% sathh    => sathh
+!      cable% um% smvcst   => smvcst  
+!      cable% um% smvcwt   => smvcwt  
+!      cable% um% smvccl   => smvccl  
+!      cable% um% albsoil  => albsoil 
+!      
+!      cable% um% pstar => pstar 
+!
+!      cable% um% lw_down   => lw_down
+!      cable% um% cos_zenith_angle   => cosz
+!      cable% um% ls_rain     => ls_rain 
+!      cable% um% ls_snow      => ls_snow
+!      cable% um% co2_mmr      => co2_mmr
+!
+!      cable% um% gs => gs
+!      cable% um% canopy_gb => canopy_gb
+!
+!      cable% cable% snow_cond = -huge(1.)
+!      cable% cable% sthu_tile = -huge(1.)
+!      cable% tmp% l_tile_pts = .false.
+!      !vn8.6 intros
+!      cable% tmp% Epsilon = 0.62198 
+!      cable% tmp% c_virtual =  1. / cable% tmp% Epsilon - 1. 
 
 END SUBROUTINE cable_control
  
