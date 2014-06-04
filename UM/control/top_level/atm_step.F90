@@ -538,6 +538,11 @@
 
 !- End of header
      
+!if(mype==0) then
+   print *, ""
+   print *, "jhan:atm_step:Section 0"
+   print *, ""
+!endif
 ! ----------------------------------------------------------------------
 ! Section 0.  Initialisation.
 ! ----------------------------------------------------------------------
@@ -723,6 +728,11 @@ CALL Atm_Step_Init (                 &
      &               OZONE_TRACER, L_USE_CARIOLLE)
 
 
+!if(mype==0) then
+   print *, ""
+   print *, "jhan:atm_step:Section 0.3"
+   print *, ""
+!endif
 ! ---------------------------------------------------------------------
 !   Section 0.3  Update lbcs for LAMs
 ! ---------------------------------------------------------------------
@@ -1074,6 +1084,11 @@ CALL Atm_Step_Init (                 &
      &              offx, offy, halo_i, halo_j, trap_option)
       END IF ! L_trap_w
 
+!if(mype==0) then
+   print *, ""
+   print *, "jhan:atm_step:Section 0.4"
+   print *, ""
+!endif
 ! ----------------------------------------------------------------------
 ! Section 0.4  Filter winds and theta near poles if active
 !              Do horizontal diffusion as a filter if active
@@ -1265,6 +1280,11 @@ CALL Atm_Step_Init (                 &
          if ( L_flush6 ) call UM_FORT_FLUSH(6,info)
        endif     !  timestep_number ==1
 
+!if(mype==0) then
+   print *, ""
+   print *, "jhan:atm_step:Section 1"
+   print *, ""
+!endif
 ! ---------------------------------------------------------------
 ! Section 1.0  Call Atmospheric Physics1
 ! ----------------------------------------------------------------------
@@ -1564,6 +1584,46 @@ CALL Atm_Step_Init (                 &
            cosp_csnow_3d = 0.0
          END IF
        END IF
+
+!      CALL cable_atm_step(             &
+!                  L_cable,             &
+!                  first_atmstep_call,  &
+!                  mype,                &
+!                  timestep_number,     &
+!                  timestep,            & ! width of timestep in seconds
+!                  row_length,          &
+!                  rows,                &
+!                  land_points,         &
+!                  ntiles,              &
+!                  sm_levels,           &
+!                  dim_cs1, LAND_FIELD,    &! dim_cs2 = LAND_FIELD for Carbon fluxes
+!                  sin_theta_latitude,  &        
+!                  cos_theta_longitude, &        
+!                  land_index,         &
+!                  clapp_horn, & ! bexp, &
+!                  therm_cond, & !hcon, &
+!                  SAT_SOIL_COND, & ! satcon, &
+!                  SAT_SOILW_SUCTION, & ! sathh,       &
+!                  VOL_SMC_sat, & ! smvcst, &
+!                  VOL_SMC_WILT, & ! smvcwt, &
+!                  VOL_SMC_crit, & ! smvccl, &
+!                  soil_alb, & ! albsoil, &
+!                  lw_down, &
+!                  cos_zenith_angle, &
+!                  ls_rain, &
+!                  ls_snow, &
+!                  pstar, &
+!                  CO2_MMR, &
+!                  sthu, &
+!                  smcl, &
+!                  sthf, &
+!                  GS, &
+!                  canopy_water, &
+!                  land_alb &
+!               )
+
+
+
 !!jhan:from 8.2          
 !      istep_cur = istep_cur + 1  ! For CABLE
 !! NB if you are changing the argument list to atmos_physics1, please
@@ -1631,6 +1691,11 @@ CALL Atm_Step_Init (                 &
 !                   )!,&
 !!jhan:from 8.2          
 
+!if(mype==0) then
+   print *, ""
+   print *, "jhan:pre cable_control "
+   print *, ""
+!endif
 
    CALL cable_control( & 
                !in 8.2 vn: pre pass timestep_number{
@@ -1681,49 +1746,11 @@ CALL Atm_Step_Init (                 &
 !             albsoil, lw_down, cosz, ls_rain, ls_snow, pstar, CO2_MMR,         &
 !             sthu, smcl, sthf, GS, canopy_gb , land_albedo )
 
-
-!      CALL cable_atm_step(             &
-!                  L_cable,             &
-!                  first_atmstep_call,  &
-!                  mype,                &
-!                  timestep_number,     &
-!                  timestep,            & ! width of timestep in seconds
-!                  row_length,          &
-!                  rows,                &
-!                  land_points,         &
-!                  ntiles,              &
-!                  sm_levels,           &
-!                  dim_cs1, LAND_FIELD,    &! dim_cs2 = LAND_FIELD for Carbon fluxes
-!                  sin_theta_latitude,  &        
-!                  cos_theta_longitude, &        
-!                  land_index,         &
-!                  clapp_horn, & ! bexp, &
-!                  therm_cond, & !hcon, &
-!                  SAT_SOIL_COND, & ! satcon, &
-!                  SAT_SOILW_SUCTION, & ! sathh,       &
-!                  VOL_SMC_sat, & ! smvcst, &
-!                  VOL_SMC_WILT, & ! smvcwt, &
-!                  VOL_SMC_crit, & ! smvccl, &
-!                  soil_alb, & ! albsoil, &
-!                  lw_down, &
-!                  cos_zenith_angle, &
-!                  ls_rain, &
-!                  ls_snow, &
-!                  pstar, &
-!                  CO2_MMR, &
-!                  sthu, &
-!                  smcl, &
-!                  sthf, &
-!                  GS, &
-!                  canopy_water, &
-!                  land_alb &
-!               )
-
-print *, ""
-print *, ""
-print *, "jhan:post control"
-print *, ""
-print *, ""
+!if(mype==0) then
+   print *, ""
+   print *, "jhan:post control"
+   print *, ""
+!endif
 STOP
 ! NB if you are changing the argument list to atmos_physics1, please
 ! do an equivalent change in routine scm_main to keep the single column
@@ -2625,9 +2652,7 @@ STOP
             END DO
           END IF
 print *, ""
-print *, ""
 print *, "jhan:pre Atmos_physics2"
-print *, ""
 print *, ""
 ! NB if you are changing the argument list to atmos_physics2, please
 ! do an equivalent change in routine scm_main to keep the single column

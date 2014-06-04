@@ -895,7 +895,7 @@ REAL                                                              &
 INTEGER(KIND=jpim), PARAMETER :: zhook_in  = 0
 INTEGER(KIND=jpim), PARAMETER :: zhook_out = 1
 REAL(KIND=jprb)               :: zhook_handle
-
+integer :: jhswitch = 0
 IF (lhook) CALL dr_hook('SF_EXCH',zhook_in,zhook_handle)
 
 array_zero(:)=0.0
@@ -978,11 +978,12 @@ DO n=1,ntiles
             pstar_land,land_pts,lq_mix_bl)
 END DO
 
-print *, ""
-print *, ""
-print *, "jhan:sf_exch_jls"
-print *, ""
-print *, ""
+if(jhswitch==0) then
+   print *, ""
+   print *, "jhan:sf_exch_jls"
+   print *, ""
+   jhswitch=1
+endif
 !-----------------------------------------------------------------------
 !!  3. Calculation of transfer coefficients and surface layer stability
 !-----------------------------------------------------------------------

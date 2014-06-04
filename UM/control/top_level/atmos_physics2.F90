@@ -4888,12 +4888,11 @@ DEALLOCATE(f_ngstress_v)
         END DO
       END DO
 
-print *, ""
-print *, ""
-print *, "jhan:pre ni_imp_ctl: STOP"
-print *, ""
-print *, ""
-STOP
+if(mype==0) then
+   print *, ""
+   print *, "jhan:pre ni_imp_ctl: STOP"
+   print *, ""
+endif
 
 ! DEPENDS ON: ni_imp_ctl
       Call NI_imp_ctl (                                                 &
