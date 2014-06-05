@@ -406,10 +406,10 @@ end subroutine set_endstep_umodel
 !                          GS, canopy_water,  land_alb )
 
 SUBROUTINE cable_control( UM_eq_TRUE, L_cable, a_step, timestep_len, row_length,     &
-             rows, land_pts, ntiles, sm_levels)!, dim_cs1, dim_cs2,              &
-!             latitude, longitude,                                              &
-!             land_index, b, hcon, satcon, sathh, smvcst, smvcwt, smvccl,       &
-!             albsoil, lw_down, cosz, ls_rain, ls_snow, pstar, CO2_MMR,         &
+               rows, land_pts, ntiles, sm_levels, dim_cs1, dim_cs2,              &
+               latitude, longitude,                                              &
+               land_index, bexp, hcon, satcon, sathh, smvcst, smvcwt, smvccl,       &
+             albsoil, lw_down)!, cosz, ls_rain, ls_snow, pstar, CO2_MMR,         &
 !             sthu, smcl, sthf, GS, canopy_gb , land_albedo )
 
    LOGICAL, target ::                                                          &
@@ -417,27 +417,32 @@ SUBROUTINE cable_control( UM_eq_TRUE, L_cable, a_step, timestep_len, row_length,
       L_CABLE          !
    
    ! vn8.6 fudged at present as NA in JULES
-   INTEGER, target :: endstep
+   !INTEGER, target :: endstep
    ! vn8.6 comments! & name changes                                             &
    INTEGER, target ::                                              &
-      !mype,             & !
       a_step,  & !
-      !endstep,          & !
       row_length, rows, &
       land_pts,      &
       ntiles,        &
       sm_levels,        &
       dim_cs1, dim_cs2
-!   ! vn8.6
-!   integer, target::                                              &
-!      timestep_len
-!
+
+   INTEGER, DIMENSION(:), target::                                              &
+      land_index
+   
+   ! vn8.6?
+   !integer, target::                                              &
+   !   timestep_len
+   ! UM vn 8.6 atm_step carries as REAL
    REAL, target::                                              &
-      timestep_len!, &
+      timestep_len
+
+   ! passed from M 8.6 as cos_theta....
+   REAL, DIMENSION(:,:), TARGET :: &
+      latitude, longitude
+
+   !REAL, target::                                              &
 !      co2_mmr
-!   
-!   INTEGER, DIMENSION(:), target::                                              &
-!      land_index
 !   
 !   ! vn8.6
 !   REAL, DIMENSION(:,:), target ::                                         &
@@ -448,38 +453,31 @@ SUBROUTINE cable_control( UM_eq_TRUE, L_cable, a_step, timestep_len, row_length,
 !   !   land_albedo 
 ! 
 !   REAL, DIMENSION(:), TARGET :: &
-!     albsoil, &
 !     cosz,    &
 !     canopy_gb, &
 !     GS 
 !
-!   !REAL, DIMENSION(:), TARGET :: &
-!   REAL, DIMENSION(:,:), TARGET :: &
-!      !albsoil, &
-!      b, &    !
-!      hcon, &    !
-!      satcon, &
-!      sathh, &
-!      smvcst, &
-!      smvcwt, &
-!      smvccl!, &
-!      !canopy_gb
-! 
+!  ! right dims in JULES standalone? 
+   !REAL, DIMENSION(:,:), TARGET :: &
+!  ! right dims in UM8.6 
+   REAL, DIMENSION(:), TARGET :: &
+      albsoil,    & ! passed from UM as soil_alb
+      bexp,       & ! passed from UM as clapp_horn
+      hcon,       & ! passed from UM as therm_cond
+      satcon,     & ! passed from UM as SAT_SOIL_COND
+      sathh,      & ! passed from UM as SAT_SOILW_SUCTION
+      smvcst,     & ! passed from UM as VOL_SMC_criT
+      smvcwt,     & ! passed from UM as VOL_SMC_WILT
+      smvccl!,     & ! passed from UM as  VOL_SMC_saT
+      !canopy_gb
+ 
 !   ! vn8.2 had
 !   !REAL, DIMENSION(:), TARGET :: &
-!   !   soil_alb, &
-!   !   clapp_horn, &    !
-!   !   therm_cond, &    !
-!   !   SAT_SOIL_COND, &
-!   !   SAT_SOILW_SUCTION, &
-!   !   VOL_SMC_criT,&
-!   !   VOL_SMC_WILT, &
-!   !   VOL_SMC_saT, &
 !   !   canopy_water, &
 !   !   GS 
 ! 
-!   REAL, DIMENSION(:,:), TARGET:: &
-!     lw_down, &
+   REAL, DIMENSION(:,:), TARGET:: &
+     lw_down!, &
 !     ! vn 8.2 had cos_zenith_angle here
 !     !cosz, &
 !     ls_rain, &
@@ -488,8 +486,10 @@ SUBROUTINE cable_control( UM_eq_TRUE, L_cable, a_step, timestep_len, row_length,
 !     smcl, &
 !     sthf
 !                           
-!   REAL, DIMENSION(:,:), TARGET :: &
-!      latitude, longitude
+   !INTEGER, target ::                                              &
+      !mype,             & !
+      !endstep,          & !
+
 !
 !   REAL, DIMENSION(:,:), TARGET, ALLOCATABLE :: &
 !      flatitude, flongitude
@@ -502,6 +502,35 @@ SUBROUTINE cable_control( UM_eq_TRUE, L_cable, a_step, timestep_len, row_length,
 !   integer :: i,j, k,n
 !   
 !   !---------------------------------------------------------------------------
+
+!print *, 'UM_eq_TRUE ',UM_eq_TRUE 
+!print *, 'L_cable ', L_cable
+!print *, 'a_step ', a_step
+!print *, 'timestep_len ', timestep_len 
+!print *, 'row_length ', row_length
+!print *, 'rows  ', rows 
+!print *, 'land_pts  ', land_pts 
+!print *, 'ntiles ',ntiles 
+!print *, 'sm_levels ',sm_levels 
+!print *, 'dim_cs1 ',  dim_cs1 
+!print *, 'dim_cs2 ', dim_cs2
+!print *, 'latitude ', latitude(1:2,1:2)
+!print *, 'longitude ',longitude(1:2,1:2)
+!print *, 'land_index ',land_index(1:2)
+print *, 'bexp ',bexp(1:2)
+print *, 'hcon ',hcon(1:2)
+print *, 'satcon ', satcon(1:2)
+print *, 'sathh ',sathh(1:2)
+print *, 'smvcst ',smvcst(1:2)
+print *, 'smvcwt ',smvcwt(1:2)
+print *, 'smvccl ',smvccl(1:2)
+print *, 'albsoil ',albsoil(1:2)
+print *, 'lw_down ',lw_down(1:2,1:2)
+!cosz, ls_rain, ls_snow, pstar, CO2_MMR,         &
+!sthu, smcl, sthf, GS, canopy_gb , land_albedo )
+
+
+
 !   !vn8.6 intros
 !   if( a_step == 1) first_atmstep_call = .TRUE. 
 !   ! vn8.6 some differences herewhat is allocated etc
