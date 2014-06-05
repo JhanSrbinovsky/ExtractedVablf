@@ -409,8 +409,8 @@ SUBROUTINE cable_control( UM_eq_TRUE, L_cable, a_step, timestep_len, row_length,
                rows, land_pts, ntiles, sm_levels, dim_cs1, dim_cs2,              &
                latitude, longitude,                                              &
                land_index, bexp, hcon, satcon, sathh, smvcst, smvcwt, smvccl,       &
-             albsoil, lw_down)!, cosz, ls_rain, ls_snow, pstar, CO2_MMR,         &
-!             sthu, smcl, sthf, GS, canopy_gb , land_albedo )
+               albsoil, lw_down, cosz, ls_rain, ls_snow, pstar, CO2_MMR,         &
+               sthu, smcl, sthf, GS, canopy_gb , land_albedo )
 
    LOGICAL, target ::                                                          &
       UM_eq_TRUE,    & !
@@ -441,22 +441,7 @@ SUBROUTINE cable_control( UM_eq_TRUE, L_cable, a_step, timestep_len, row_length,
    REAL, DIMENSION(:,:), TARGET :: &
       latitude, longitude
 
-   !REAL, target::                                              &
-!      co2_mmr
-!   
-!   ! vn8.6
-!   REAL, DIMENSION(:,:), target ::                                         &
-!      pstar, &
-!      land_albedo 
-! 
-!   !REAL, DIMENSION(:,:,:), target ::                                         &
-!   !   land_albedo 
-! 
-!   REAL, DIMENSION(:), TARGET :: &
-!     cosz,    &
-!     canopy_gb, &
-!     GS 
-!
+
 !  ! right dims in JULES standalone? 
    !REAL, DIMENSION(:,:), TARGET :: &
 !  ! right dims in UM8.6 
@@ -468,23 +453,38 @@ SUBROUTINE cable_control( UM_eq_TRUE, L_cable, a_step, timestep_len, row_length,
       sathh,      & ! passed from UM as SAT_SOILW_SUCTION
       smvcst,     & ! passed from UM as VOL_SMC_criT
       smvcwt,     & ! passed from UM as VOL_SMC_WILT
-      smvccl!,     & ! passed from UM as  VOL_SMC_saT
-      !canopy_gb
+      smvccl,     & ! passed from UM as  VOL_SMC_saT
+      canopy_gb     ! passed from UM as canopy_water 
+
+   ! vn8.6
+    REAL, DIMENSION(:,:), TARGET:: &
+      lw_down,    &
+      cosz,       & ! vn 8.2 had cos_zenith_angle here
+      ls_rain,    &
+      ls_snow,    &   
+      pstar,      &
+      sthu,       &
+      smcl,       &
+      sthf,       &
+      land_albedo 
  
-!   ! vn8.2 had
-!   !REAL, DIMENSION(:), TARGET :: &
-!   !   canopy_water, &
-!   !   GS 
+   REAL, target::                                              &
+      co2_mmr
+   
+   ! vn8.2 had
+   REAL, DIMENSION(:), TARGET :: &
+      GS 
+   !   canopy_water, &
+
+!   !REAL, DIMENSION(:,:,:), target ::                                         &
+!   !   land_albedo 
 ! 
-   REAL, DIMENSION(:,:), TARGET:: &
-     lw_down!, &
-!     ! vn 8.2 had cos_zenith_angle here
-!     !cosz, &
-!     ls_rain, &
-!     ls_snow, & 
-!     sthu, &
-!     smcl, &
-!     sthf
+!   REAL, DIMENSION(:), TARGET :: &
+!     cosz,    &
+!     canopy_gb, &
+!     GS 
+!
+!
 !                           
    !INTEGER, target ::                                              &
       !mype,             & !
@@ -517,18 +517,26 @@ SUBROUTINE cable_control( UM_eq_TRUE, L_cable, a_step, timestep_len, row_length,
 !print *, 'latitude ', latitude(1:2,1:2)
 !print *, 'longitude ',longitude(1:2,1:2)
 !print *, 'land_index ',land_index(1:2)
-print *, 'bexp ',bexp(1:2)
-print *, 'hcon ',hcon(1:2)
-print *, 'satcon ', satcon(1:2)
-print *, 'sathh ',sathh(1:2)
-print *, 'smvcst ',smvcst(1:2)
-print *, 'smvcwt ',smvcwt(1:2)
-print *, 'smvccl ',smvccl(1:2)
-print *, 'albsoil ',albsoil(1:2)
-print *, 'lw_down ',lw_down(1:2,1:2)
-!cosz, ls_rain, ls_snow, pstar, CO2_MMR,         &
-!sthu, smcl, sthf, GS, canopy_gb , land_albedo )
-
+!print *, 'bexp ',bexp(1:2)
+!print *, 'hcon ',hcon(1:2)
+!print *, 'satcon ', satcon(1:2)
+!print *, 'sathh ',sathh(1:2)
+!print *, 'smvcst ',smvcst(1:2)
+!print *, 'smvcwt ',smvcwt(1:2)
+!print *, 'smvccl ',smvccl(1:2)
+!print *, 'albsoil ',albsoil(1:2)
+!print *, 'lw_down ',lw_down(1:2,1:2)
+print *,"cosz ", cosz(1:2,1:2)
+print *,"ls_rain ", ls_rain(1:2,1:2)
+print *,"ls_snow ", ls_snow(1:2,1:2)
+print *,"pstar ", pstar(1:2,1:2)
+print *,"CO2_MMR ", CO2_MMR
+print *,"sthu ", sthu(1:2,1:2)
+print *,"smcl ", smcl(1:2,1:2)
+print *,"sthf ", sthf(1:2,1:2)
+print *,"GS ", GS(1:2)
+print *,"canopy_gb ", canopy_gb(1:2)
+print *,"land_albedo ", land_albedo (1:2,1:2)
 
 
 !   !vn8.6 intros

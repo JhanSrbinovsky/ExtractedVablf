@@ -2399,15 +2399,15 @@ endif
             VOL_SMC_WILT, & ! smvcwt, &
             VOL_SMC_crit, & ! smvccl, &
             soil_alb, & ! albsoil, &
-            lw_down)!, &
+            lw_down, &
 !            !jhan: these were used in JULES
 !            !cosz, 
-!            cos_zenith_angle, &
-!            ls_rain, ls_snow, pstar, CO2_MMR,         &
-!            sthu, smcl, sthf, GS, &
+            cos_zenith_angle, &
+            ls_rain, ls_snow, pstar, CO2_MMR,         &
+            sthu, smcl, sthf, GS, &
 !            !jhan: these were used in JULES
 !            !canopy_gb , land_albedo 
-!            canopy_water, land_alb )
+            canopy_water, land_alb )
 
 !SUBROUTINE cable_control( L_cable, a_step, timestep_len, row_length,     &
 !             rows, land_pts, ntiles, sm_levels, dim_cs1, dim_cs2,              &
