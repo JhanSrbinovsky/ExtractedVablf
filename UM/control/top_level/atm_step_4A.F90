@@ -2362,8 +2362,6 @@ IF (l_physics .AND. errorstatus == 0) THEN
 if(mype==0) then
    print *, ""
    print *, "jhan:pre cable_control "
-   print *, "jhan:land_field ", land_field
-   print *, "jhan:dim_cs1", dim_cs1 
    print *, ""
 endif
 
@@ -2415,13 +2413,6 @@ endif
 !             land_index, b, hcon, satcon, sathh, smvcst, smvcwt, smvccl,       &
 !             albsoil, lw_down, cosz, ls_rain, ls_snow, pstar, CO2_MMR,         &
 !             sthu, smcl, sthf, GS, canopy_gb , land_albedo )
-
-if(mype==0) then
-   print *, ""
-   print *, "jhan:post control"
-   print *, ""
-endif
-STOP
 
 ! DEPENDS ON: atmos_physics1
         Call Atmos_Physics1(                                             &

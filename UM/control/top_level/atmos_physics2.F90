@@ -3283,38 +3283,46 @@ END IF ! vatpoles
       L_plsp=.true.
       L_scrn=L_plsp
 #endif
-!jhan: this checks out - comment out for now
-!SUBROUTINE cable_control2( npft, tile_frac, snow_tile, vshr_land, canopy,      &
-!              canht_ft, lai_ft, conv_rain, conv_snow, NPP,NPP_FT,              &
-!              GPP, GPP_FT, RESP_S, rESP_S_TOT, RESP_S_TILE, RESP_P,            &
-!              RESP_P_FT, G_LEAF, Radnet_TILE, Lying_snow, surf_roff,           &
-!              sub_surf_roff, tot_tfall )
-!   call cable_atmos_physics2( &
-!                     npft, &
-!                     tile_frac, &
-!                     snow_tile, & 
-!                     vshr_land, & 
-!                     canopy, &
-!                     canht_ft, &
-!                     lai_ft, &
-!                     conv_rain, &
-!                     conv_snow, &
-!                     NPP,&
-!                     NPP_FT, &
-!                     GPP,&
-!                     GPP_FT,&
-!                     RESP_S,&
-!                     RESP_S_TOT,&
-!                     RESP_S_TILE,     &
-!                     RESP_P,&
-!                     RESP_P_FT, &
-!                     G_LEAF, &
-!                     Radnet_TILE,     &
-!                     Lying_snow,       &
-!                     surf_roff, &
-!                     sub_surf_roff, &
-!                     tot_tfall &
-!          )
+
+if(mype==0) then
+   print *, ""
+   print *, "jhan:pre control2"
+   print *, ""
+endif
+
+   call cable_control2( &
+                     npft, &
+                     tile_frac, &
+                     snow_tile, & 
+                     vshr_land, & 
+                     canopy, &
+                     canht_ft, &
+                     lai_ft, &
+                     conv_rain, &
+                     conv_snow, &
+                     NPP,&
+                     NPP_FT, &
+                     GPP,&
+                     GPP_FT,&
+                     RESP_S,&
+                     RESP_S_TOT,&
+                     RESP_S_TILE,     &
+                     RESP_P,&
+                     RESP_P_FT, &
+                     G_LEAF, &
+                     Radnet_TILE,     &
+                     Lying_snow,       &
+                     surf_roff, &
+                     sub_surf_roff, &
+                     tot_tfall &
+          )
+
+if(mype==0) then
+   print *, ""
+   print *, "jhan:post control2"
+   print *, ""
+endif
+STOP
 
   IF (L_bl) THEN
 !

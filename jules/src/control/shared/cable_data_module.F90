@@ -673,6 +673,8 @@ SUBROUTINE cable_control2( npft, tile_frac, snow_tile, vshr_land, canopy,      &
       tot_tfall, &
       LYING_SNOW
    
+      CALL print_control_args()
+
       cable% mp% npft            => npft
       cable% ppar% tile_frac     => tile_frac
       cable% um% snow_tile       => snow_tile
@@ -697,6 +699,37 @@ SUBROUTINE cable_control2( npft, tile_frac, snow_tile, vshr_land, canopy,      &
       cable% hyd% surf_roff      => surf_roff
       cable% hyd% tot_tfall      => tot_tfall
       cable% hyd% LYING_SNOW     => LYING_SNOW
+
+
+contains 
+
+subroutine print_control_args()
+   print *,'npft ',npft
+   !print *,'tile_frac ',tile_frac(1,1)
+   print *,'snow_tile ',snow_tile(1,1)
+   print *,'vshr_land ',vshr_land(1,1)
+   print *,'canopy ',canopy(1,1)
+   print *,'canht_ft ',canht_ft(1,1)
+   print *,'lai_ft ',lai_ft(1,1)
+   print *,'conv_rain ',conv_rain(1,1)
+   print *,'conv_snow ',conv_snow(1,1)
+   !print *,'NPP ',NPP(1)
+   !print *,'NPP_FT ',NPP_FT(1,1)
+   !print *,'GPP ',GPP(1)
+   !print *,'GPP_FT ',GPP_FT(1,1)
+   !print *,'RESP_S ',RESP_S(1,1)
+   !print *,'rESP_S_TOT ',rESP_S_TOT(1)
+   !print *,'RESP_S_TILE ', RESP_S_TILE(1,1)
+   !print *,'RESP_P ',RESP_P(1)
+   !print *,'RESP_P_FT ',RESP_P_FT(1,1)
+   !print *,'G_LEAF ',G_LEAF(1,1)
+   !print *,'Radnet_TILE ',Radnet_TILE(1,1)
+   !print *,'Lying_snow ',Lying_snow(1)
+   !print *,'surf_roff ',surf_roff(1)
+   !print *,'sub_surf_roff ',sub_surf_roff(1)
+   !print *,'tot_tfall ',tot_tfall(1)
+End subroutine print_control_args
+
 
 END SUBROUTINE cable_control2
 
