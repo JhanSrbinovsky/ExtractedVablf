@@ -111,6 +111,9 @@ SUBROUTINE bdy_layr (                                                   &
   USE yomhook, ONLY: lhook, dr_hook
   USE parkind1, ONLY: jprb, jpim
 
+  use cable_data_mod, only : cable_control3
+
+
   IMPLICIT NONE
 
 #include "screendiag.h" 
@@ -1008,6 +1011,9 @@ REAL, INTENT(OUT) ::                                                    &
     ALLOCATE(z1_uv_top(1,1))
     ALLOCATE(z1_tq_top(1,1))
   END IF
+
+  ! these vars declared for the first time here are passed to CABLE as tl_1, qw_1
+  call cable_control3( tl, qw )
 
 ! DEPENDS ON: bdy_expl1
   CALL bdy_expl1 (                                                      &
