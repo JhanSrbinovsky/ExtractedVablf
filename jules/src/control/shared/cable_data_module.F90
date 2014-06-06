@@ -19,6 +19,10 @@ module cable_data_mod
    !use define_dimensions, only : nrb 
    implicit none
   
+interface cond_print
+   module procedure cond_print1D, cond_print2D
+End interface cond_print
+   
    ! public variables. ALL vars above "contains" are deliberately public
     
    ! public subroutines 
@@ -673,7 +677,7 @@ SUBROUTINE cable_control2( npft, tile_frac, snow_tile, vshr_land, canopy,      &
       tot_tfall, &
       LYING_SNOW
    
-      CALL print_control_args()
+      !CALL print_control_args()
 
       cable% mp% npft            => npft
       cable% ppar% tile_frac     => tile_frac
@@ -704,35 +708,126 @@ SUBROUTINE cable_control2( npft, tile_frac, snow_tile, vshr_land, canopy,      &
 contains 
 
 subroutine print_control_args()
-   print *,'npft ',npft
-   !print *,'tile_frac ',tile_frac(1,1)
-   print *,'snow_tile ',snow_tile(1,1)
-   print *,'vshr_land ',vshr_land(1,1)
-   print *,'canopy ',canopy(1,1)
-   print *,'canht_ft ',canht_ft(1,1)
-   print *,'lai_ft ',lai_ft(1,1)
-   print *,'conv_rain ',conv_rain(1,1)
-   print *,'conv_snow ',conv_snow(1,1)
-   !print *,'NPP ',NPP(1)
-   !print *,'NPP_FT ',NPP_FT(1,1)
-   !print *,'GPP ',GPP(1)
-   !print *,'GPP_FT ',GPP_FT(1,1)
-   !print *,'RESP_S ',RESP_S(1,1)
-   !print *,'rESP_S_TOT ',rESP_S_TOT(1)
-   !print *,'RESP_S_TILE ', RESP_S_TILE(1,1)
-   !print *,'RESP_P ',RESP_P(1)
-   !print *,'RESP_P_FT ',RESP_P_FT(1,1)
-   !print *,'G_LEAF ',G_LEAF(1,1)
-   !print *,'Radnet_TILE ',Radnet_TILE(1,1)
-   !print *,'Lying_snow ',Lying_snow(1)
-   !print *,'surf_roff ',surf_roff(1)
-   !print *,'sub_surf_roff ',sub_surf_roff(1)
-   !print *,'tot_tfall ',tot_tfall(1)
+
+   !print *,''
+   !print *,'jhan:shape:npft ',         shape(npft)
+   !print *,'jhan:shape:tile_frac ',    shape(tile_frac) 
+   !print *,'jhan:shape:snow_tile ',    shape(snow_tile)
+   !print *,'jhan:shape:vshr_land ',    shape(vshr_land)
+   !print *,'jhan:shape:canopy ',       shape(canopy)
+   !print *,'jhan:shape:canht_ft ',     shape(canht_ft)
+   !print *,'jhan:shape:lai_ft ',       shape(lai_ft)
+   !print *,'jhan:shape:conv_rain ',    shape(conv_rain)
+   !print *,'jhan:shape:conv_snow ',    shape(conv_snow)
+   !print *,'jhan:shape:NPP ',          shape(NPP)
+   !print *,'jhan:shape:NPP_FT ',       shape(NPP_FT)
+   !print *,'jhan:shape:GPP ',          shape(GPP)
+   !print *,'jhan:shape:GPP_FT ',       shape(GPP_FT)
+   !print *,'jhan:shape:RESP_S ',       shape(RESP_S)
+   !print *,'jhan:shape:rESP_S_TOT ',   shape(rESP_S_TOT)
+   !print *,'jhan:shape:RESP_S_TILE ',  shape(RESP_S_TILE)
+   !print *,'jhan:shape:RESP_P ',       shape(RESP_P)
+   !print *,'jhan:shape:RESP_P_FT ',    shape(RESP_P_FT)
+   !print *,'jhan:shape:G_LEAF ',       shape(G_LEAF)
+   !print *,'jhan:shape:Radnet_TILE ',  shape(Radnet_TILE)
+   !print *,'jhan:shape:Lying_snow ',   shape(Lying_snow)
+   !print *,'jhan:shape:surf_roff ',    shape(surf_roff)
+   !print *,'jhan:shape:sub_surf_roff ',shape(sub_surf_roff)
+   !print *,'jhan:shape:tot_tfall ',    shape(tot_tfall)
+   
+   print *,'jhan:npft ',         npft
+   print *,'jhan:tile_frac ',    tile_frac(1,1)
+   print *,'jhan:snow_tile ',    snow_tile(1,1)
+   print *,'jhan:vshr_land ',    vshr_land(1,1)
+   print *,'jhan:canopy ',       canopy(1,1)
+   print *,'jhan:canht_ft ',     canht_ft(1,1)
+   print *,'jhan:lai_ft ',       lai_ft(1,1)
+   print *,'jhan:conv_rain ',    conv_rain(1,1)
+   print *,'jhan:conv_snow ',    conv_snow(1,1)
+   print *,'jhan:NPP ',          NPP(1)
+   print *,'jhan:NPP_FT ',       NPP_FT(1,1)
+   print *,'jhan:GPP ',          GPP(1)
+   print *,'jhan:GPP_FT ',       GPP_FT(1,1)
+   print *,'jhan:RESP_S ',       RESP_S(1,1)
+   print *,'jhan:rESP_S_TOT ',   rESP_S_TOT(1)
+   print *,'jhan:RESP_S_TILE ',  RESP_S_TILE(1,1)
+   print *,'jhan:RESP_P ',       RESP_P(1)
+   print *,'jhan:RESP_P_FT ',    RESP_P_FT(1,1)
+   print *,'jhan:G_LEAF ',       G_LEAF(1,1)
+   print *,'jhan:Radnet_TILE ',  Radnet_TILE(1,1)
+   print *,'jhan:Lying_snow ',   Lying_snow(1)
+   print *,'jhan:surf_roff ',    surf_roff(1)
+   print *,'jhan:sub_surf_roff ',sub_surf_roff(1)
+   print *,'jhan:tot_tfall ',    tot_tfall(1)
+  
+   !print *,''
+   !print *,'jhan:control2_var:tile_frac '
+   !CALL cond_print(     tile_frac   )
+   !print *,'jhan:control2_var:snow_tile '
+   !CALL cond_print(     snow_tile   )
+   !print *,'jhan:control2_var:vshr_land '
+   !CALL cond_print(     vshr_land   )
+   !print *,'jhan:control2_var:canopy '
+   !CALL cond_print(     canopy      )
+   !print *,'jhan:control2_var:canht_ft '
+   !CALL cond_print(     canht_ft    )
+   !print *,'jhan:control2_var:lai_ft '
+   !CALL cond_print(     lai_ft      )
+   !print *,'jhan:control2_var:conv_rain '
+   !CALL cond_print(     conv_rain   )
+   !print *,'jhan:control2_var:conv_snow '
+   !CALL cond_print(     conv_snow   )
+   !CALL cond_print(     NPP         )
+   !CALL cond_print(     NPP_FT      )
+   !CALL cond_print(     GPP         )
+   !CALL cond_print(     GPP_FT      )
+   !CALL cond_print(     RESP_S      )  
+   !CALL cond_print(     rESP_S_TOT  )
+   !CALL cond_print(     RESP_S_TILE )
+   !CALL cond_print(     RESP_P      )
+   !CALL cond_print(     RESP_P_FT   )
+   !CALL cond_print(     G_LEAF      )
+   !CALL cond_print(     Radnet_TILE )
+   !CALL cond_print(     Lying_snow  )
+   !CALL cond_print(     surf_roff   )
+   !CALL cond_print(     tot_tfall   )
+   !CALL cond_print(     sub_surf_roff)
+   
 End subroutine print_control_args
 
+  
 
 END SUBROUTINE cable_control2
 
+   subroutine cond_print1D( var )
+      real, dimension(:) :: var
+      integer :: len1, i
+         
+      len1 = SIZE( var,1 )
+      do i=1,len1
+         if( var(i) < -1.e9 .OR. var(i) > 1.e9) then
+            print *, "jhan:cond1d: i val", i, var(i)
+         endif                
+      enddo        
+
+   End subroutine cond_print1D
+   
+   subroutine cond_print2D( var )
+      real, dimension(:,:) :: var
+      integer :: len1, len2, i, j
+         
+      len1 = SIZE( var,1 )
+      len2 = SIZE( var,2 )
+      do i=1,len1
+      do j=1,len2
+         if( var(i,j) < -1.e9 .OR. var(i,j) > 1.e9) then
+            print *, "jhan:cond2d: i val", i, j, var(i,j)
+         endif                
+      enddo        
+      enddo        
+
+   End subroutine cond_print2D
+ 
 
 !===============================================================================
 

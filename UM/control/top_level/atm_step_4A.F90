@@ -2361,8 +2361,7 @@ IF (l_physics .AND. errorstatus == 0) THEN
 
 if(mype==0) then
    print *, ""
-   print *, "jhan:pre cable_control "
-   print *, ""
+   print *, "jhan:atm_step:pre cable_control "
 endif
 
    CALL cable_control( & 

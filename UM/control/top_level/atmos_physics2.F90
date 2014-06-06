@@ -1998,7 +1998,30 @@ REAL u_at_w,v_at_w
 ! needed for vatpoles for fv_cos_theta_latitude vs cos_theta_latitude
 REAL, POINTER :: xx_cos_theta_latitude (:,:)
 
-      IF (lhook) CALL dr_hook('ATMOS_PHYSICS2',zhook_in,zhook_handle)
+!tile_frac
+!snow_tile
+!vshr_land
+!canopy
+!canht_ft
+!lai_ft
+!conv_rain
+!conv_snow
+!NPP
+!NPP_FT
+!GPP
+!GPP_FT
+!RESP_S
+!rESP_S_TOT
+!RESP_S_TILE
+!RESP_P
+!RESP_P_FT
+!G_LEAF
+!Radnet_TILE
+!Lying_snow
+!surf_roff
+!sub_surf_roff
+!tot_tfall
+     IF (lhook) CALL dr_hook('ATMOS_PHYSICS2',zhook_in,zhook_handle)
 
 IF ( l_vatpoles ) THEN
    xx_cos_theta_latitude => cos_theta_latitude
@@ -3284,10 +3307,34 @@ END IF ! vatpoles
       L_scrn=L_plsp
 #endif
 
-if(mype==0) then
+   !print *,'jhan:atmos:mype, row_length, rows ',mype, row_length, rows 
+if(mype==0 .OR. mype < 20) then
    print *, ""
-   print *, "jhan:pre control2"
-   print *, ""
+   print *, "jhan:atmos:pre control2"
+   print *,'jhan:atmos:npft ',         npft
+   print *,'jhan:atmos:tile_frac ',    tile_frac(1,1)
+   print *,'jhan:atmos:snow_tile ',    snow_tile(1,1)
+   print *,'jhan:atmos:vshr_land ',    vshr_land(1,1)
+   print *,'jhan:atmos:canopy ',       canopy(1,1)
+   print *,'jhan:atmos:canht_ft ',     canht_ft(1,1)
+   print *,'jhan:atmos:lai_ft ',       lai_ft(1,1)
+   print *,'jhan:atmos:conv_rain ',    conv_rain(1,1)
+   print *,'jhan:atmos:conv_snow ',    conv_snow(1,1)
+   print *,'jhan:atmos:NPP ',          NPP(1)
+   print *,'jhan:atmos:NPP_FT ',       NPP_FT(1,1)
+   print *,'jhan:atmos:GPP ',          GPP(1)
+   print *,'jhan:atmos:GPP_FT ',       GPP_FT(1,1)
+   print *,'jhan:atmos:RESP_S ',       RESP_S(1,1)
+   print *,'jhan:atmos:rESP_S_TOT ',   rESP_S_TOT(1)
+   print *,'jhan:atmos:RESP_S_TILE ',  RESP_S_TILE(1,1)
+   print *,'jhan:atmos:RESP_P ',       RESP_P(1)
+   print *,'jhan:atmos:RESP_P_FT ',    RESP_P_FT(1,1)
+   print *,'jhan:atmos:G_LEAF ',       G_LEAF(1,1)
+   print *,'jhan:atmos:Radnet_TILE ',  Radnet_TILE(1,1)
+   print *,'jhan:atmos:Lying_snow ',   Lying_snow(1)
+   print *,'jhan:atmos:surf_roff ',    surf_roff(1)
+   print *,'jhan:atmos:sub_surf_roff ',sub_surf_roff(1)
+   print *,'jhan:atmos:tot_tfall ',    tot_tfall(1)
 endif
 
    call cable_control2( &
@@ -3322,7 +3369,6 @@ if(mype==0) then
    print *, "jhan:post control2"
    print *, ""
 endif
-STOP
 
   IF (L_bl) THEN
 !
@@ -4901,7 +4947,7 @@ if(mype==0) then
    print *, "jhan:pre ni_imp_ctl: STOP"
    print *, ""
 endif
-
+STOP
 ! DEPENDS ON: ni_imp_ctl
       Call NI_imp_ctl (                                                 &
 

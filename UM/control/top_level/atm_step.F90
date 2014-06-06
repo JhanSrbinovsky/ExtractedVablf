@@ -539,9 +539,6 @@
 !- End of header
      
 !if(mype==0) then
-   print *, ""
-   print *, "jhan:atm_step:Section 0"
-   print *, ""
 !endif
 ! ----------------------------------------------------------------------
 ! Section 0.  Initialisation.
@@ -2576,13 +2573,12 @@ CALL Atm_Step_Init (                 &
               END DO
             END DO
           END IF
-print *, ""
-print *, "jhan:pre Atmos_physics2"
-print *, ""
 ! NB if you are changing the argument list to atmos_physics2, please
 ! do an equivalent change in routine scm_main to keep the single column
 ! model consistent. Note there are two calls to atmos_physics2 in scm_main.
 
+print *, ""
+print *, "jhan:atm_step:pre Atmos_physics2"
 ! DEPENDS ON: atmos_physics2
           CALL Atmos_Physics2(                                           &
 ! Parallel variables
@@ -2703,10 +2699,7 @@ print *, ""
       ,                      ErrorStatus )
 
 print *, ""
-print *, ""
-print *, "jhan:post Atmos_physics2"
-print *, ""
-print *, ""
+print *, "jhan:atm_step:post Atmos_physics2"
           IF (l_mr_physics2) THEN
 
           ! Copy output from atmos_physics2 into mix_* and mix_*_phys2
