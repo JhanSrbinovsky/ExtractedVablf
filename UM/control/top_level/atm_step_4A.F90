@@ -270,14 +270,15 @@ USE nlstcall_mod, ONLY : ldump, &
                          lexit, &
                          ltimer
 
-USE chsunits_mod, ONLY : nunits
-
-USE science_fixes_mod, ONLY : l_use_old_mass_fix
 
 use cable_data_mod, only : tsoil_tile, smcl_tile, sthf_tile,     & !
                            snow_depth3l, snow_mass3l, snow_tmp3l,    & !
                            snow_rho3l, snow_rho1l, snow_age, &!
                            snow_flg3l, cable_control
+USE chsunits_mod, ONLY : nunits
+
+USE science_fixes_mod, ONLY : l_use_old_mass_fix
+
 IMPLICIT NONE
 
 !
@@ -718,9 +719,6 @@ IF (printstatus > prstatus_oper) THEN
 
 END IF
 
-   !print *, ""
-   !print *, "jhan:S_4a ection 0"
-   !print *, ""
 ! ----------------------------------------------------------------------
 ! Section 0.  Initialisation.
 ! ----------------------------------------------------------------------
@@ -1291,9 +1289,6 @@ IF (integrity_test_ghash) THEN
   IF(me==0) CLOSE (eg_unit)
 END IF
 
-   !print *, ""
-   !print *, "jhan:S_4a ection 0.2"
-   !print *, ""
 !======== LBC Update =========================================================
 ! ---------------------------------------------------------------------
 !   Section 0.2  Update lbcs for LAMs
@@ -1962,9 +1957,6 @@ CALL update_hash_m(                                                     &
 END IF ! timestep_number > 1 -> filter
 !=== End Polar filter + diffusion section ===================================
 
-   !print *, ""
-   !print *, "jhan:S_4a ection 1"
-   !print *, ""
 
 ! ----------------------------------------------------------------------
 ! Section 1.0  Call Atmospheric Physics1
@@ -2292,73 +2284,6 @@ IF (l_physics .AND. errorstatus == 0) THEN
       END IF
     END IF
 
-!!jhan:from 8.2          
-!      istep_cur = istep_cur + 1  ! For CABLE
-!! NB if you are changing the argument list to atmos_physics1, please
-!! do an equivalent change in routine scm_main to keep the single column
-!! model consistent.
-!
-!      ! dim_cs2 needs to be modified for Carbon fluxes
-!      DIM_CS2 = LAND_FIELD
-!! DEPENDS ON: cable_atm_step.o
-!!      CALL cable_atm_step(             &
-!!                  first_atmstep_call, &
-!!                  mype,                &
-!!                  timestep_number,     &
-!!                  endstep,             & !
-!!                  timestep,            & ! width of timestep in seconds
-!!                  row_length,          &
-!!                  rows,                &
-!!                  land_points,         &
-!!                  ntiles,              &
-!!                  sm_levels,           &
-!                  dim_cs1, dim_cs2,    &
-!                  sin_theta_latitude,  &        
-!                  cos_theta_longitude, &        
-!                  land_index,         &
-!                  tile_pts,           &
-!                  tile_index, &
-!                  ! pass cable progS vars to cable module 
-!                  tsoil_tile, & 
-!                  smcl_tile,     & !
-!                  sthf_tile,     & !
-!                  snow_depth3l,  & !
-!                  snow_mass3l,   & !
-!                  snow_tmp3l,    & !
-!                  snow_rho3l,    & !
-!                  snow_rho1l,    & !
-!                  snow_age, &!,      & !
-!                  !issue here with real/integer
-!                  !snow_flg3l &!,    & !
-!                  clapp_horn, & ! bexp, &
-!                  therm_cond, & !hcon, &
-!                  SAT_SOIL_COND, & ! satcon, &
-!                  SAT_SOILW_SUCTION, & ! sathh,       &
-!                  VOL_SMC_sat, & ! smvcst, &
-!                  VOL_SMC_WILT, & ! smvcwt, &
-!                  VOL_SMC_crit, & ! smvccl, &
-!                  soil_alb, & ! albsoil, &
-!                  snow_cond, &
-!                  lw_down, &
-!                  cos_zenith_angle, &
-!                  ls_rain, &
-!                  ls_snow, &
-!           pstar, &
-!           L_tile_pts, &
-!           CO2_MMR, &
-!           sthu_tile, &
-!           sthu, &
-!           smcl, &
-!           sthf, &
-!           surf_down_sw, &
-!           tot_alb, & 
-!            SW_DOWN, &  
-!            RADNET_TILE, &
-!            GS, &
-!            canopy_water &
-!                   )!,&
-!!jhan:from 8.2          
-
 if(mype==0) then
    print *, ""
    print *, "jhan:atm_step:pre cable_control "
@@ -2405,13 +2330,6 @@ endif
 !            !jhan: these were used in JULES
 !            !canopy_gb , land_albedo 
             canopy_water, land_alb )
-
-!SUBROUTINE cable_control( L_cable, a_step, timestep_len, row_length,     &
-!             rows, land_pts, ntiles, sm_levels, dim_cs1, dim_cs2,              &
-!             latitude, longitude,                                              &
-!             land_index, b, hcon, satcon, sathh, smvcst, smvcwt, smvccl,       &
-!             albsoil, lw_down, cosz, ls_rain, ls_snow, pstar, CO2_MMR,         &
-!             sthu, smcl, sthf, GS, canopy_gb , land_albedo )
 
 ! DEPENDS ON: atmos_physics1
         Call Atmos_Physics1(                                             &

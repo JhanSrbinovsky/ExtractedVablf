@@ -206,7 +206,7 @@
      use cable_data_mod, only : tsoil_tile, smcl_tile, sthf_tile,     & !
                                  snow_depth3l, snow_mass3l, snow_tmp3l,    & !
                                  snow_rho3l, snow_rho1l, snow_age, &!
-                                 snow_flg3l, cable_control
+                                 snow_flg3l, cable_atm_step
       IMPLICIT NONE
 !
 ! Description: Perform a 1-timestep integration of the Atmosphere Model,
@@ -538,8 +538,6 @@
 
 !- End of header
      
-!if(mype==0) then
-!endif
 ! ----------------------------------------------------------------------
 ! Section 0.  Initialisation.
 ! ----------------------------------------------------------------------
@@ -1567,6 +1565,50 @@ CALL Atm_Step_Init (                 &
          END IF
        END IF
 
+   CALL cable_control( 
+            !jhan: put dummy arg to say where coming from. 
+            !jhan: then in cable_data_module decide how to treat
+            .TRUE., &   ! UM_atm_step=
+            L_cable, &
+            !jhan: in JULES we passed a_step
+            TIMESTEP_NUMBER, &
+            !jhan: in JULES we passed timestep_len 
+            TIMESTEP, &
+            row_length,     &
+            rows, &
+            !jhan: in JULES we passed land_pts 
+            LAND_FIELD, ntiles, sm_levels, dim_cs1, dim_cs2,              &
+            !jhan: NA here: only sin_theta etc 
+            LATITUDE, LONGITUDE,                                              &
+            land_index, &
+            !jhan: these were used in JULES
+            !b, hcon, satcon, sathh, smvcst, smvcwt, smvccl, albsoil,       &
+            clapp_horn, & ! bexp, &
+            therm_cond, & !hcon, &
+            SAT_SOIL_COND, & ! satcon, &
+            SAT_SOILW_SUCTION, & ! sathh,       &
+            VOL_SMC_sat, & ! smvcst, &
+            VOL_SMC_WILT, & ! smvcwt, &
+            VOL_SMC_crit, & ! smvccl, &
+            soil_alb, & ! albsoil, &
+            lw_down, &
+            !jhan: these were used in JULES
+            !cosz, 
+            cos_zenith_angle, &
+            ls_rain, ls_snow, pstar, CO2_MMR,         &
+            sthu, smcl, sthf, GS, &
+            !jhan: these were used in JULES
+            !canopy_gb , land_albedo 
+            canopy_water, land_alb )
+
+!SUBROUTINE cable_control( L_cable, a_step, timestep_len, row_length,     &
+!             rows, land_pts, ntiles, sm_levels, dim_cs1, dim_cs2,              &
+!             latitude, longitude,                                              &
+!             land_index, b, hcon, satcon, sathh, smvcst, smvcwt, smvccl,       &
+!             albsoil, lw_down, cosz, ls_rain, ls_snow, pstar, CO2_MMR,         &
+!             sthu, smcl, sthf, GS, canopy_gb , land_albedo )
+
+
 !      CALL cable_atm_step(             &
 !                  L_cable,             &
 !                  first_atmstep_call,  &
@@ -1603,76 +1645,6 @@ CALL Atm_Step_Init (                 &
 !                  canopy_water, &
 !                  land_alb &
 !               )
-
-
-
-!!jhan:from 8.2          
-!      istep_cur = istep_cur + 1  ! For CABLE
-!! NB if you are changing the argument list to atmos_physics1, please
-!! do an equivalent change in routine scm_main to keep the single column
-!! model consistent.
-!
-!      ! dim_cs2 needs to be modified for Carbon fluxes
-!      DIM_CS2 = LAND_FIELD
-!! DEPENDS ON: cable_atm_step.o
-!!      CALL cable_atm_step(             &
-!!                  first_atmstep_call, &
-!!                  mype,                &
-!!                  timestep_number,     &
-!!                  endstep,             & !
-!!                  timestep,            & ! width of timestep in seconds
-!!                  row_length,          &
-!!                  rows,                &
-!!                  land_points,         &
-!!                  ntiles,              &
-!!                  sm_levels,           &
-!                  dim_cs1, dim_cs2,    &
-!                  sin_theta_latitude,  &        
-!                  cos_theta_longitude, &        
-!                  land_index,         &
-!                  tile_pts,           &
-!                  tile_index, &
-!                  ! pass cable progS vars to cable module 
-!                  tsoil_tile, & 
-!                  smcl_tile,     & !
-!                  sthf_tile,     & !
-!                  snow_depth3l,  & !
-!                  snow_mass3l,   & !
-!                  snow_tmp3l,    & !
-!                  snow_rho3l,    & !
-!                  snow_rho1l,    & !
-!                  snow_age, &!,      & !
-!                  !issue here with real/integer
-!                  !snow_flg3l &!,    & !
-!                  clapp_horn, & ! bexp, &
-!                  therm_cond, & !hcon, &
-!                  SAT_SOIL_COND, & ! satcon, &
-!                  SAT_SOILW_SUCTION, & ! sathh,       &
-!                  VOL_SMC_sat, & ! smvcst, &
-!                  VOL_SMC_WILT, & ! smvcwt, &
-!                  VOL_SMC_crit, & ! smvccl, &
-!                  soil_alb, & ! albsoil, &
-!                  snow_cond, &
-!                  lw_down, &
-!                  cos_zenith_angle, &
-!                  ls_rain, &
-!                  ls_snow, &
-!           pstar, &
-!           L_tile_pts, &
-!           CO2_MMR, &
-!           sthu_tile, &
-!           sthu, &
-!           smcl, &
-!           sthf, &
-!           surf_down_sw, &
-!           tot_alb, & 
-!            SW_DOWN, &  
-!            RADNET_TILE, &
-!            GS, &
-!            canopy_water &
-!                   )!,&
-!!jhan:from 8.2          
-
 
 ! NB if you are changing the argument list to atmos_physics1, please
 ! do an equivalent change in routine scm_main to keep the single column
@@ -2573,12 +2545,11 @@ CALL Atm_Step_Init (                 &
               END DO
             END DO
           END IF
+
 ! NB if you are changing the argument list to atmos_physics2, please
 ! do an equivalent change in routine scm_main to keep the single column
 ! model consistent. Note there are two calls to atmos_physics2 in scm_main.
 
-print *, ""
-print *, "jhan:atm_step:pre Atmos_physics2"
 ! DEPENDS ON: atmos_physics2
           CALL Atmos_Physics2(                                           &
 ! Parallel variables
@@ -2698,8 +2669,6 @@ print *, "jhan:atm_step:pre Atmos_physics2"
 ! error information
       ,                      ErrorStatus )
 
-print *, ""
-print *, "jhan:atm_step:post Atmos_physics2"
           IF (l_mr_physics2) THEN
 
           ! Copy output from atmos_physics2 into mix_* and mix_*_phys2

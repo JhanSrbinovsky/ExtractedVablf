@@ -699,16 +699,16 @@ REAL, INTENT(OUT) ::                                                    &
                                 ! OUT Net primary productivity
 !                                  !     (kg C/m2/s).
  resp_p(land_points),                                                   &
-                                ! OUT Plant respiration (kg C/m2/s
- g_leaf(land_points,npft),                                              &
+!CABLE: kdcorbin, 11/10 - changed from NPFT, currently setup for Leaf Resp
+ g_leaf(land_points,ntiles),                                            &
                                 ! OUT Leaf turnover rate (/360days
- gpp_ft(land_points,npft),                                              &
+ gpp_ft(land_points,ntiles),                                            &
                                 ! OUT Gross primary productivity
 !                                  !     on PFTs (kg C/m2/s).
- npp_ft(land_points,npft),                                              &
+ npp_ft(land_points,ntiles),                                            &
                                 ! OUT Net primary productivity
 !                                  !     (kg C/m2/s).
- resp_p_ft(land_points,npft),                                           &
+ resp_p_ft(land_points,ntiles),                                           &
                                 ! OUT Plant respiration on PFTs
 !                                  !     (kg C/m2/s).
  resp_s(land_points,dim_cs1),                                           &

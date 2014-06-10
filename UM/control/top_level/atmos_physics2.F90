@@ -1998,30 +1998,7 @@ REAL u_at_w,v_at_w
 ! needed for vatpoles for fv_cos_theta_latitude vs cos_theta_latitude
 REAL, POINTER :: xx_cos_theta_latitude (:,:)
 
-!tile_frac
-!snow_tile
-!vshr_land
-!canopy
-!canht_ft
-!lai_ft
-!conv_rain
-!conv_snow
-!NPP
-!NPP_FT
-!GPP
-!GPP_FT
-!RESP_S
-!rESP_S_TOT
-!RESP_S_TILE
-!RESP_P
-!RESP_P_FT
-!G_LEAF
-!Radnet_TILE
-!Lying_snow
-!surf_roff
-!sub_surf_roff
-!tot_tfall
-     IF (lhook) CALL dr_hook('ATMOS_PHYSICS2',zhook_in,zhook_handle)
+      IF (lhook) CALL dr_hook('ATMOS_PHYSICS2',zhook_in,zhook_handle)
 
 IF ( l_vatpoles ) THEN
    xx_cos_theta_latitude => cos_theta_latitude
@@ -3339,12 +3316,6 @@ endif
                      sub_surf_roff, &
                      tot_tfall &
           )
-
-if(mype==0) then
-   print *, ""
-   print *, "jhan:post control2"
-   print *, ""
-endif
 
   IF (L_bl) THEN
 !
@@ -4918,12 +4889,6 @@ DEALLOCATE(f_ngstress_v)
         END DO
       END DO
 
-if(mype==0) then
-   print *, ""
-   print *, "jhan:pre ni_imp_ctl: STOP"
-   print *, ""
-endif
-STOP
 ! DEPENDS ON: ni_imp_ctl
       Call NI_imp_ctl (                                                 &
 

@@ -193,9 +193,6 @@ IMPLICIT NONE
 ! If we are not in UM, define everything else that is needed
 !-----------------------------------------------------------------------
 
-  INTEGER ::                                                      &
-   ilayers = 10      ! Number of layers for canopy radiation model
-
   LOGICAL ::                                                      &
    route         = .FALSE.                                        &
                 !  Switch for runoff routing.
@@ -244,6 +241,8 @@ IMPLICIT NONE
 !-----------------------------------------------------------------------
 #endif
 
+  LOGICAL :: l_cable = .FALSE.  ! runtime switch to call CABLE and switch
+                                ! components of JULES on/off  
 !-----------------------------------------------------------------------
 ! Set up a namelist to allow switches to be set
 ! UM and standalone JULES currently have different requirements since
@@ -273,7 +272,7 @@ IMPLICIT NONE
                             l_sice_multilayers, l_cice_alb,       &
                             l_sice_heatflux, l_mod_barker_albedo, &
                             l_top, l_pdm, l_soil_sat_down,        &
-                            l_anthrop_heat_src, l_ctile
+                            l_anthrop_heat_src, l_ctile, l_cable
 #else
   NAMELIST /jules_switches/ l_aggregate,i_aggregate_opt,          &
                             can_model,can_rad_mod,                &
@@ -288,7 +287,7 @@ IMPLICIT NONE
                             soilhc_method,l_point_data,           &
                             l_rho_snow_corr,l_baseflow_corr,      &
                             l_dpsids_dsdz, l_albedo_obs,          &
-                            l_dolr_land_black, l_bvoc_emis
+                            l_dolr_land_black, l_bvoc_emis, l_cable
 #endif
                             
 

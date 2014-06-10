@@ -113,7 +113,6 @@ SUBROUTINE bdy_layr (                                                   &
 
   use cable_data_mod, only : cable_control3
 
-
   IMPLICIT NONE
 
 #include "screendiag.h" 

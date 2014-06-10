@@ -235,6 +235,7 @@ SUBROUTINE glue_rad (                                                   &
   USE Submodel_Mod
 
 !$ USE omp_lib
+  use cable_data_mod, ONLY : cable_control5, cable_glue_rad_init
   IMPLICIT NONE
 
 ! Segmentation variables
@@ -1303,6 +1304,7 @@ END IF ! vatpoles
 ! ----------------------------------------------------------------------
 ! Section INI. Initialisation of stash output variables.
 ! ----------------------------------------------------------------------
+  call cable_glue_rad_init( surf_down_sw )
 
   l_co2_3d = l_co2_interactive
 
@@ -2096,6 +2098,8 @@ END IF ! vatpoles
         END IF ! if sw radiation call required
       END DO ! loop over radiation calls
 
+      !CABLE
+      tile_frac = 0.
 
       DO j_sw = n_swcall, 1, -1
 ! Set COSP flag only on prognostic radiation steps
@@ -5291,6 +5295,10 @@ ipar=1
     END IF ! L_SCMDiags(SCMDiag_rad)
 
 #endif
+
+
+    call cable_control5( alb_tile, land_albedo,         &
+                  TILE_PTS, TILE_INDEX, surf_down_sw )        
 
     DEALLOCATE ( t_incr_diagnostic )
 
