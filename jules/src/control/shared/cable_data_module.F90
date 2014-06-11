@@ -226,8 +226,8 @@ End interface cond_print
         ls_rain, &
         ls_snow 
 
-      ! vn8.6 uses as 2D- (was 3-D)
-      REAL, DIMENSION(:,:), POINTER :: &
+      ! JULES uses as 2D- (was 3-D)
+      REAL, DIMENSION(:,:,:), POINTER :: &
          tl_1, &
          qw_1
 
@@ -834,24 +834,25 @@ END SUBROUTINE cable_control2
 
 !vn8.2 was SUBROUTINE cable_bdy_layr( TL, qw )  
 SUBROUTINE cable_control3( TL, qw )  
+   !JULES3.4.1 
+   !REAL, DIMENSION(:,:), TARGET:: &
+   REAL, DIMENSION(:,:,:), TARGET:: &
+      tl, &
+      qw
 
-      REAL, DIMENSION(:,:), TARGET:: &
-      !REAL, DIMENSION(:,:,:), TARGET:: &
-         tl, &
-         qw
-
-      cable% um% tl_1 => tl 
-      cable% um% qw_1 => qw 
+   cable% um% tl_1 => tl 
+   cable% um% qw_1 => qw 
 
 END SUBROUTINE cable_control3
 
 
 !===============================================================================
 
-! vn8.2 WAS SUBROUTINE cable_glue_rad( alb_tile, land_albedo,         &
-!                  TILE_PTS, TILE_INDEX, surf_down_sw )
+!JULES standalone we fudge this SW
+!SUBROUTINE cable_control5( alb_tile, land_albedo,         &
+!                  TILE_PTS, TILE_INDEX )        
 SUBROUTINE cable_control5( alb_tile, land_albedo,         &
-                  TILE_PTS, TILE_INDEX )        
+                  TILE_PTS, TILE_INDEX, surf_down_sw )
 
    INTEGER, DIMENSION(:) ::                                        &
       tile_pts
@@ -861,7 +862,8 @@ SUBROUTINE cable_control5( alb_tile, land_albedo,         &
 
    Real, dimension(:,:,:), target ::                       &
       alb_tile
-! vn8.2 WAS Real, dimension(:,:,:) :: surf_down_sw
+
+   Real, dimension(:,:,:) :: surf_down_sw
 
    Real, dimension(cable% mp% rows, cable% mp% row_length,4), target ::                       &
       land_albedo
@@ -871,7 +873,7 @@ SUBROUTINE cable_control5( alb_tile, land_albedo,         &
    cable% um% land_albedo => land_albedo
    cable% um% TILE_PTS = TILE_PTS
    cable% um% TILE_INDEX = TILE_INDEX
-! vn8.2 had cable% forcing% ShortWave    = surf_down_sw
+   !cable% forcing% ShortWave    = surf_down_sw
 
 END SUBROUTINE cable_control5 
 
@@ -881,28 +883,28 @@ END SUBROUTINE cable_control5
 ! vn8.2 had cable% forcing% ShortWave    = surf_down_sw
 !jhan: this is a very temp HACK - for offline SW is split in cable radiation
 !module by spitter. online it recieves th SW calculated by the UM rad scheme 
-SUBROUTINE cable_control4( sw_down )
-   
-   Real, dimension(:,:) :: sw_down
-   !Real, dimension( cable% mp% row_length, cable% mp% rows, 4) :: surf_down_sw
-
-     !jhan: offline receives total SW and splits (CABLE uses subr spitter)
-     cable% forcing% ShortWave(:,:,1)    = sw_down(:,:) 
-     cable% forcing% ShortWave(:,:,2)    = 0. 
-     cable% forcing% ShortWave(:,:,3)    = 0. 
-     cable% forcing% ShortWave(:,:,4)    = 0. 
-     !cable% forcing% ShortWave(:,:,1)    = sw_down(:,:) / 4.
-     !cable% forcing% ShortWave(:,:,2)    = sw_down(:,:) / 4.
-     !cable% forcing% ShortWave(:,:,3)    = sw_down(:,:) / 4.
-     !cable% forcing% ShortWave(:,:,4)    = sw_down(:,:) / 4.
-     
-
-END SUBROUTINE cable_control4
+!SUBROUTINE cable_control4( sw_down )
+!   
+!   Real, dimension(:,:) :: sw_down
+!   !Real, dimension( cable% mp% row_length, cable% mp% rows, 4) :: surf_down_sw
+!
+!     !jhan: offline receives total SW and splits (CABLE uses subr spitter)
+!     cable% forcing% ShortWave(:,:,1)    = sw_down(:,:) 
+!     cable% forcing% ShortWave(:,:,2)    = 0. 
+!     cable% forcing% ShortWave(:,:,3)    = 0. 
+!     cable% forcing% ShortWave(:,:,4)    = 0. 
+!     !cable% forcing% ShortWave(:,:,1)    = sw_down(:,:) / 4.
+!     !cable% forcing% ShortWave(:,:,2)    = sw_down(:,:) / 4.
+!     !cable% forcing% ShortWave(:,:,3)    = sw_down(:,:) / 4.
+!     !cable% forcing% ShortWave(:,:,4)    = sw_down(:,:) / 4.
+!     
+!
+!END SUBROUTINE cable_control4
 
 !vn 8.6 standalone used above hack as surf_down_sw N/A
 SUBROUTINE cable_glue_rad_init( surf_down_sw )
-   Real, dimension(:,:,:) :: surf_down_sw
-     surf_down_sw = cable% forcing% ShortWave
+   Real, dimension(:,:,:), target :: surf_down_sw
+     cable% forcing% ShortWave => surf_down_sw 
 END SUBROUTINE cable_glue_rad_init
 
 

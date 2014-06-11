@@ -203,10 +203,10 @@
 
       USE nlstcall_mod, ONLY : ldump, &
                                ltimer
-     use cable_data_mod, only : tsoil_tile, smcl_tile, sthf_tile,     & !
-                                 snow_depth3l, snow_mass3l, snow_tmp3l,    & !
-                                 snow_rho3l, snow_rho1l, snow_age, &!
-                                 snow_flg3l, cable_atm_step
+      use cable_data_mod, only : tsoil_tile, smcl_tile, sthf_tile,     & !
+                           snow_depth3l, snow_mass3l, snow_tmp3l,    & !
+                           snow_rho3l, snow_rho1l, snow_age, &!
+                           snow_flg3l, cable_control
       IMPLICIT NONE
 !
 ! Description: Perform a 1-timestep integration of the Atmosphere Model,
@@ -396,6 +396,7 @@
 !                                 shortwave radiation in band 1 (w/m2).
      &, rad_hr(row_length, rows, 2, bl_levels)                           &
 !                                 BL (LW,SW) rad heating rates
+     &, surf_radflux(row_length, rows, nice_use)                         &
      &, dolr(row_length,rows)                                            &
 !       local field "dolr" is distinguished from "dolr_field" (in atm_fields_mod)
                                    ! TOA - surface upward LW
@@ -1565,13 +1566,24 @@ CALL Atm_Step_Init (                 &
          END IF
        END IF
 
-   CALL cable_control( 
+if(mype==0) then
+   print *, ""
+   print *, "jhan:atm_step.orig:pre cable_control "
+endif
+
+   CALL cable_control( & 
+               !in 8.2 vn: pre pass timestep_number{
+               !CALL cable_atm_step(             &
+               !            first_atmstep_call, &
+               !            mype,                &
+               !in 8.2 vn: pre pass timestep_number}
             !jhan: put dummy arg to say where coming from. 
             !jhan: then in cable_data_module decide how to treat
             .TRUE., &   ! UM_atm_step=
-            L_cable, &
+            .TRUE., & ! fudge L_cable switch, 
             !jhan: in JULES we passed a_step
             TIMESTEP_NUMBER, &
+               !in 8.2 vn: pass endstep here:  
             !jhan: in JULES we passed timestep_len 
             TIMESTEP, &
             row_length,     &
@@ -1579,10 +1591,10 @@ CALL Atm_Step_Init (                 &
             !jhan: in JULES we passed land_pts 
             LAND_FIELD, ntiles, sm_levels, dim_cs1, dim_cs2,              &
             !jhan: NA here: only sin_theta etc 
-            LATITUDE, LONGITUDE,                                              &
+            acos(cos_theta_LATITUDE), acos(cos_theta_LONGITUDE),          &
             land_index, &
-            !jhan: these were used in JULES
-            !b, hcon, satcon, sathh, smvcst, smvcwt, smvccl, albsoil,       &
+!            !jhan: these were used in JULES
+!            !b, hcon, satcon, sathh, smvcst, smvcwt, smvccl, albsoil,       &
             clapp_horn, & ! bexp, &
             therm_cond, & !hcon, &
             SAT_SOIL_COND, & ! satcon, &
@@ -1592,59 +1604,14 @@ CALL Atm_Step_Init (                 &
             VOL_SMC_crit, & ! smvccl, &
             soil_alb, & ! albsoil, &
             lw_down, &
-            !jhan: these were used in JULES
-            !cosz, 
+!            !jhan: these were used in JULES
+!            !cosz, 
             cos_zenith_angle, &
             ls_rain, ls_snow, pstar, CO2_MMR,         &
             sthu, smcl, sthf, GS, &
-            !jhan: these were used in JULES
-            !canopy_gb , land_albedo 
+!            !jhan: these were used in JULES
+!            !canopy_gb , land_albedo 
             canopy_water, land_alb )
-
-!SUBROUTINE cable_control( L_cable, a_step, timestep_len, row_length,     &
-!             rows, land_pts, ntiles, sm_levels, dim_cs1, dim_cs2,              &
-!             latitude, longitude,                                              &
-!             land_index, b, hcon, satcon, sathh, smvcst, smvcwt, smvccl,       &
-!             albsoil, lw_down, cosz, ls_rain, ls_snow, pstar, CO2_MMR,         &
-!             sthu, smcl, sthf, GS, canopy_gb , land_albedo )
-
-
-!      CALL cable_atm_step(             &
-!                  L_cable,             &
-!                  first_atmstep_call,  &
-!                  mype,                &
-!                  timestep_number,     &
-!                  timestep,            & ! width of timestep in seconds
-!                  row_length,          &
-!                  rows,                &
-!                  land_points,         &
-!                  ntiles,              &
-!                  sm_levels,           &
-!                  dim_cs1, LAND_FIELD,    &! dim_cs2 = LAND_FIELD for Carbon fluxes
-!                  sin_theta_latitude,  &        
-!                  cos_theta_longitude, &        
-!                  land_index,         &
-!                  clapp_horn, & ! bexp, &
-!                  therm_cond, & !hcon, &
-!                  SAT_SOIL_COND, & ! satcon, &
-!                  SAT_SOILW_SUCTION, & ! sathh,       &
-!                  VOL_SMC_sat, & ! smvcst, &
-!                  VOL_SMC_WILT, & ! smvcwt, &
-!                  VOL_SMC_crit, & ! smvccl, &
-!                  soil_alb, & ! albsoil, &
-!                  lw_down, &
-!                  cos_zenith_angle, &
-!                  ls_rain, &
-!                  ls_snow, &
-!                  pstar, &
-!                  CO2_MMR, &
-!                  sthu, &
-!                  smcl, &
-!                  sthf, &
-!                  GS, &
-!                  canopy_water, &
-!                  land_alb &
-!               )
 
 ! NB if you are changing the argument list to atmos_physics1, please
 ! do an equivalent change in routine scm_main to keep the single column
@@ -1727,7 +1694,7 @@ CALL Atm_Step_Init (                 &
      &,biogenic, A_INTHD(23), ukca_radaer                                &
 ! OUT Fields
      &,     ls_rain, ls_snow, micro_tends, unscaled_dry_rho              &
-      ,     photosynth_act_rad, rad_hr, dolr, SW_tile                    &
+     &,     photosynth_act_rad, rad_hr, surf_radflux, dolr, SW_tile      &
 ! error information
      &,     ErrorStatus  )
 
@@ -2611,7 +2578,7 @@ CALL Atm_Step_Init (                 &
       ,SAT_SOIL_COND,SAT_SOILW_SUCTION,CLAPP_HORN                        &
       ,SMCL, T1_SD, Q1_SD, ZH, ddmfx, CF_AREA, CF_BULK, CF_LIQUID        &
       ,CF_FROZEN, ls_rain, ls_snow, micro_tends                          &
-      ,photosynth_act_rad, rad_hr, SOIL_CLAY                             &
+      ,photosynth_act_rad, rad_hr, surf_radflux, SOIL_CLAY               &
       ,SOIL_SILT,SOIL_SAND, DUST_MREL1,DUST_MREL2                        &
       ,DUST_MREL3,DUST_MREL4,DUST_MREL5,DUST_MREL6                       &
       ,SO2_HILEM, SO2_EM, NH3_EM, DMS_EM,SOOT_HILEM, SOOT_EM, OCFF_HILEM &
@@ -2634,7 +2601,7 @@ CALL Atm_Step_Init (                 &
 ! Additional variables for MOSES II
       , FRAC_TYP, DISTURB_VEG, CANHT_PFT, LAI_PFT                        &
       , CAN_WATER_TILE, CATCH_TILE, CATCH_SNOW                           &
-      , SNOW_GRND, SNODEP_TILE, Z0_TILE, Z0H_TILE, TSTAR_TILE            &
+      , SNOW_GRND, SNODEP_TILE, Z0_TILE, TSTAR_TILE                      &
       , INFIL_TILE, RGRAIN_TILE, CS, GS                                  &
       , co2_dim_row, co2_dim_len, A_INTHD(23)                            &
       , STEPim(atmos_im), G_LF_PFT_ACC, G_PHLF_PFT_ACC, NPP_PFT_ACC      &

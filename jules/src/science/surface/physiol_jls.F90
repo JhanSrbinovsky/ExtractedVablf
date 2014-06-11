@@ -228,7 +228,7 @@ REAL                                                              &
 ,flake(land_pts,ntiles)                                           &
                             ! OUT Lake fraction.
 !CABLE: kdcorbin, 11/10 - changed from NPFT
-,g_leaf(land_pts,ntiles),                                               &
+,g_leaf(land_pts,ntiles)                                               &
                             ! OUT Leaf turnover rate (/360days).
 ,gs_tile(land_pts,ntiles)                                         &
                             ! OUT Surface conductance for
@@ -236,19 +236,19 @@ REAL                                                              &
 ,gpp(land_pts)                                                    &
                             ! OUT Gridbox mean gross primary
 !                                 !     productivity (kg C/m2/s).
-,gpp_ft(land_pts,ntiles),                                               &
+,gpp_ft(land_pts,ntiles)                                               &
                             ! OUT Gross primary productivity
 !                                 !     (kg C/m2/s).
 ,npp(land_pts)                                                    &
                             ! OUT Gridbox mean net primary
 !                                 !     productivity (kg C/m2/s).
-,npp_ft(land_pts,ntiles),                                               &
+,npp_ft(land_pts,ntiles)                                               &
                             ! OUT Net primary productivity
 !                                 !     (kg C/m2/s).
 ,resp_p(land_pts)                                                 &
                             ! OUT Gridbox mean plant respiration
 !                                 !     (kg C/m2/s).
-,resp_p_ft(land_pts,ntiles),                                            &
+,resp_p_ft(land_pts,ntiles)                                            &
                             ! OUT Plant respiration (kg C/m2/s).
 ,resp_s(land_pts,dim_cs1)                                         &
                            ! OUT Soil respiration (kg C/m2/s).
