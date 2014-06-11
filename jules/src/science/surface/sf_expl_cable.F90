@@ -31,7 +31,7 @@ SUBROUTINE sf_expl_l_cable (                                            &
 ! IN sea/sea-ice data :
  ice_fract_cat,k_sice,                                            &
 ! IN everything not covered so far :
- pstar,lw_down,rad_sice,sw_tile,zh,ddmfx,                         &
+ pstar,lw_down,sw_tile,zh,ddmfx,                                  &
  co2_mmr,co2_3d,l_co2_interactive,l_phenol,l_triffid,             &
  asteps_since_triffid,cs,frac,canht_ft,photosynth_act_rad,lai_ft, &
  lq_mix_bl,t_soil,ti,tstar,tstar_sea,tstar_sice_cat,              &
@@ -46,8 +46,8 @@ SUBROUTINE sf_expl_l_cable (                                            &
 ! INOUT data :
  l_q10,z0msea,gs,g_leaf_acc,npp_ft_acc,resp_w_ft_acc,resp_s_acc,  &
 ! OUT Diagnostic not requiring STASH flags :
- recip_l_mo_sea,fqw_1,ftl_1,ftl_tile,                             &
- radnet_sice,rhokm_1,rib,rib_tile,                                &
+ recip_l_mo_sea,e_sea,fqw_1,ftl_1,ftl_tile,le_tile,h_sea,         &
+ radnet_sice,radnet_tile,rhokm_1,rib,rib_tile,                    &
 ! OUT variables for message passing
  flandfac, fseafac, rhokm_land, rhokm_ssi, cdr10m,                &
 ! OUT diagnostic requiring STASH flags :
@@ -64,7 +64,7 @@ SUBROUTINE sf_expl_l_cable (                                            &
 ! OUT data required elsewhere in boundary layer or surface code
  alpha1,alpha1_sice,ashtf_prime,ashtf_prime_tile,fqw_tile,        &
  epot_tile,fqw_ice,ftl_ice,fraca,rhostar,resfs,resft,             &
- rhokh,rhokh_tile,rhokh_sice,dtstar_tile,dtstar,                  &
+ rhokh,rhokh_tile,rhokh_sice,rhokh_mix,dtstar_tile,dtstar,        &
  h_blend_orog,z0hssi,z0h_tile,z0h_eff,z0m_gb,z0mssi,z0m_tile,     &
  z0m_eff,chr1p5m,chr1p5m_sice,smc,hcons,vshr,vshr_land,vshr_ssi,  &
  gpp,npp,resp_p,g_leaf,gpp_ft,npp_ft,                             &
@@ -86,7 +86,10 @@ USE soil_param, ONLY : dzsoil
 
 USE snow_param, ONLY : ds
 
-USE fluxes, ONLY : anthrop_heat
+USE surf_param, ONLY : emis_sice 
+
+USE fluxes, ONLY : anthrop_heat,                                  &
+                   sw_sice
 
 USE nstypes, ONLY :                                               &
 !      imported scalars with intent(in)
@@ -94,26 +97,32 @@ USE nstypes, ONLY :                                               &
 
 USE veg_param, ONLY : secs_per_360days
 
-USE switches, ONLY: l_aggregate, can_model, can_rad_mod,                &
-                    buddy_sea, l_ctile, ilayers, formdrag,              &
-                    orog_drag_param, fd_stab_dep
-USE timestep_mod, ONLY: timestep
+USE switches, ONLY: l_aggregate, can_model, can_rad_mod, &
+                    buddy_sea, l_ctile
 
 #if defined(UM_JULES)
+USE land_surf_mod, ONLY: ilayers
 USE atm_step_local, ONLY: land_pts_trif, npft_trif,dim_cs1, dim_cs2,    &
      co2_dim_len,co2_dim_row
+USE timestep_mod, ONLY: timestep
+USE science_fixes_mod, ONLY: l_emis_ssi_full
 #else
+USE switches, ONLY: ilayers
 USE ancil_info, ONLY: land_pts_trif, npft_trif,dim_cs1, dim_cs2,        &
      co2_dim_len,co2_dim_row
+USE model_time_mod, ONLY: timestep_len
 #endif
-
-USE ancil_info, ONLY: nsmax
+                    
+USE ancil_info, ONLY: nsmax, sice_pts_ncat, sice_index_ncat,            &
+     ssi_index
 
 USE prognostics, ONLY: nsnow,sice,sliq,snowdepth,tsnow
 USE c_elevate, ONLY: surf_hgt
 
-USE bl_option_mod, ONLY: on, l_quick_ap2
-USE surf_param, ONLY: charnock, SeaSalinityFactor
+USE bl_option_mod, ONLY: fd_stab_dep, formdrag, on,      &
+                  orog_drag_param, charnock,seasalinityfactor,    &
+                  l_quick_ap2
+
 USE solinc_data, ONLY: sky, l_skyview
 
 USE atm_fields_bounds_mod, ONLY:                                  &
@@ -196,7 +205,7 @@ INTEGER, INTENT(IN) ::                                            &
                              ! IN No. of soil moisture levels
 ,ntiles                                                           &
                              ! IN No. of land-surface tiles
-,asteps_since_triffid
+,asteps_since_triffid                                              
                              ! IN Number of atmospheric
                                   !    timesteps since last call
                                   !    to TRIFFID.
@@ -235,9 +244,9 @@ REAL, INTENT(IN) ::                                               &
 !                                  !    saturation.
 ,z0_tile(land_pts,ntiles)                                         &
                              ! IN Tile roughness lengths (m).
-,z0h_tile_bare(land_pts,ntiles)                                   & 
-                             ! IN Tile thermal roughness lengths  
-                             ! without snow cover(m). 
+,z0h_tile_bare(land_pts,ntiles)                                   &
+                             ! IN Tile thermal roughness lengths 
+                             ! without snow cover(m).
 ,sil_orog_land(land_pts)                                          &
                              ! IN Silhouette area of unresolved
 !                                  !    orography per unit horizontal
@@ -272,11 +281,6 @@ REAL, INTENT(IN) ::                                               &
 ,lw_down(tdims%i_start:tdims%i_end,tdims%j_start:tdims%j_end)     &
                              ! IN Surface downward LW radiation
 !                                  !    (W/m2).
-,rad_sice(tdims%i_start:tdims%i_end,tdims%j_start:tdims%j_end,    &
-          nice_use)                                               &
-                             ! IN Surface net shortwave and
-!                                  !    downward LWradiation for
-!                                  !    sea-ice (W/sq m).
 ,sw_tile(land_pts,ntiles)                                         &
                              ! IN Surface net SW radiation on
 !                                  !    land tiles (W/m2).
@@ -389,6 +393,10 @@ REAL, INTENT(OUT) ::                                              &
 !                                  ! OUT Reciprocal of the surface
 !                                  !     Obukhov  length at sea
 !                                  !     points. (m-1).
+,e_sea(tdims%i_start:tdims%i_end,tdims%j_start:tdims%j_end)       &
+                             ! OUT Evaporation from sea times
+!                                  !     leads fraction. Zero over land.
+!                                  !     (kg per square metre per sec).
 ,fqw_1(tdims%i_start:tdims%i_end,tdims%j_start:tdims%j_end)       &
                              ! OUT Moisture flux between layers
 !                                  !     (kg per square metre per sec).
@@ -401,10 +409,18 @@ REAL, INTENT(OUT) ::                                              &
 !                                  !     surface sensible heat, H.(W/m2)
 ,ftl_tile(land_pts,ntiles)                                        &
                              ! OUT Surface FTL for land tiles
+,le_tile(land_pts,ntiles)                                         &
+                             ! OUT Surface latent heat flux for
+!                                  !     land tiles
+,h_sea(tdims%i_start:tdims%i_end,tdims%j_start:tdims%j_end)       &
+                             ! OUT Surface sensible heat flux over
+!                                  !     sea times leads fraction (W/m2)
 ,radnet_sice(tdims%i_start:tdims%i_end,tdims%j_start:tdims%j_end, &
              nice_use)                                            &
                              ! OUT Surface net radiation on
 !                                  !     sea-ice (W/m2)
+,radnet_tile(land_pts,ntiles)                                     &
+                             ! OUT Surface net radiation on
 ,rhokm_1(pdims_s%i_start:pdims_s%i_end,                           &
          pdims_s%j_start:pdims_s%j_end)                           &
 !                                  ! OUT Exchange coefficients for
@@ -535,6 +551,8 @@ REAL, INTENT(OUT) ::                                              &
 ,rhokh_sice(tdims%i_start:tdims%i_end,tdims%j_start:tdims%j_end)  &
                              ! OUT Surface exchange coefficients
 !                                  !     for sea and sea-ice
+,rhokh_mix(tdims%i_start:tdims%i_end,tdims%j_start:tdims%j_end)   &
+                             ! OUT Exchange coeffs for moisture.
 ,dtstar_tile(land_pts,ntiles)                                     &
                              ! OUT Change in TSTAR over timestep
 !                                  !     for land tiles
@@ -642,8 +660,6 @@ REAL                                                              &
  vfrac_tile(land_pts,ntiles)                                      &
                           ! Fractional canopy coverage for
                           ! land tiles.
-,radnet_tile(land_pts,ntiles)                                     &
-                          ! Surface net radiation on tiles
 ,csnow(land_pts,nsmax)                                            &
                           ! Areal heat capacity of snow (J/K/m2)
 ,ksnow(land_pts,nsmax)                                            &
@@ -678,12 +694,23 @@ REAL fseamax  ! Maximum factor to apply to coast wind speed
 REAL flandmin
 PARAMETER(flandmin=0.2)
 
+! temporary timestep variable needed because JULES and UM have different
+! names and types for the variable
+#if !defined(UM_JULES)
+REAL :: timestep
+#endif
+
 INTEGER(KIND=jpim), PARAMETER :: zhook_in  = 0
 INTEGER(KIND=jpim), PARAMETER :: zhook_out = 1
 REAL(KIND=jprb)               :: zhook_handle
 
 IF (lhook) CALL dr_hook('SF_EXPL_L',zhook_in,zhook_handle)
 
+! temporary timestep variable needed because JULES and UM have different
+! names and types for the variable
+#if !defined(UM_JULES)
+timestep = REAL(timestep_len)
+#endif
 !-----------------------------------------------------------------------
 ! Call TILEPTS to calculate TILE_PTS and TILE_INDEX for surface types
 !-----------------------------------------------------------------------
@@ -950,6 +977,7 @@ END IF                     ! End test on land points
 !-----------------------------------------------------------------------
 
     radnet_tile(:,:) = 0.
+    le_tile(:,:) = 0.
 
 IF (l_skyview) THEN
   DO n=1,ntiles
@@ -973,14 +1001,29 @@ ELSE
   END DO
 END IF
 
+radnet_sice(:,:,:) = 0.0
+
 DO n = 1, nice_use
-  DO j=tdims%j_start,tdims%j_end
-    DO i=tdims%i_start,tdims%i_end
-      radnet_sice(i,j,n) = 0.
-      IF (flandg(i,j) <  1.0 .AND. ice_fract_cat(i,j,n) >  0.)     &
-        radnet_sice(i,j,n) = rad_sice(i,j,n) -             &
-                                  sbcon*tstar_sice_cat(i,j,n)**4
-    END DO
+  DO k = 1, sice_pts_ncat(n)
+    l = sice_index_ncat(k,n)
+    j=(ssi_index(l)-1)/t_i_length + 1
+    i = ssi_index(l) - (j-1)*t_i_length
+    radnet_sice(i,j,n) = sw_sice(l,n) + emis_sice *                      &
+               ( lw_down(i,j) - sbcon*tstar_sice_cat(i,j,n)**4 )
+#if defined(UM_JULES)
+    IF (.NOT.l_emis_ssi_full) THEN
+!     Replicate initial implementation with omission of emissivity
+!     at this point. The calculation is written in two stages 
+!     to match old calculation exactly at the bit level.
+      IF (flandg(i,j) <  1.0 .AND. ice_fract_cat(i,j,n) >  0.)           &
+        radnet_sice(i,j,n) = ice_fract_cat(i,j,n)*sw_sice(l,n)
+        radnet_sice(i,j,n) = radnet_sice(i,j,n) +                        &
+          ice_fract_cat(i,j,n) * lw_down(i,j)
+        radnet_sice(i,j,n) = radnet_sice(i,j,n) / ice_fract_cat(i,j,n)
+        radnet_sice(i,j,n) = radnet_sice(i,j,n) -                        &
+          sbcon*tstar_sice_cat(i,j,n)**4
+    ENDIF
+#endif
   END DO
 END DO
 
@@ -1016,15 +1059,15 @@ CALL sf_exch_cable (                                                    &
  orog_drag_param,z0msea,                                          &
  alpha1,alpha1_sice,ashtf_prime,ashtf_prime_tile,                 &
  recip_l_mo_sea,cdr10m,chr1p5m,                                   &
- chr1p5m_sice,fme,fqw_1,fqw_tile,epot_tile,fqw_ice,               &
- ftl_1,ftl_tile,ftl_ice,fraca,h_blend_orog,charnock,              &
+ chr1p5m_sice,e_sea,fme,fqw_1,fqw_tile,epot_tile,fqw_ice,         &
+ ftl_1,ftl_tile,ftl_ice,fraca,h_blend_orog,h_sea,charnock,        &
  rhostar,resfs,resft,rib,rib_tile,                                &
  fb_surf,u_s,q1_sd,t1_sd,z0hssi,z0h_tile,z0h_eff,                 &
  z0m_gb,z0mssi,z0m_tile,z0m_eff,rho_aresist,aresist,resist_b,     &
  rho_aresist_tile,aresist_tile,resist_b_tile,                     &
  r_b_dust,cd_std_dust,u_s_std_tile,                               &
  rhokh_tile,rhokh_sice,rhokm_1,rhokm_land,rhokm_ssi,              &
- dtstar_tile,dtstar,rhokh,anthrop_heat                            &
+ dtstar_tile,dtstar,rhokh,rhokh_mix,anthrop_heat                  &
  )
 
 

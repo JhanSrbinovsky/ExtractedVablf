@@ -40,16 +40,16 @@ SUBROUTINE sf_exch_cable (                                              &
  orog_drag_param,z0msea,                                          &
  alpha1,alpha1_sice,ashtf_prime,ashtf_prime_tile,                 &
  recip_l_mo_sea,cdr10m,                                           &
- chr1p5m,chr1p5m_sice,fme,fqw_1,fqw_tile,epot_tile,               &
+ chr1p5m,chr1p5m_sice,e_sea,fme,fqw_1,fqw_tile,epot_tile,         &
  fqw_ice,                                                         &
- ftl_1,ftl_tile,ftl_ice,fraca,h_blend_orog,charnock,              &
+ ftl_1,ftl_tile,ftl_ice,fraca,h_blend_orog,h_sea,charnock,        &
  rhostar,resfs,resft,rib,rib_tile,                                &
  fb_surf,u_s,q1_sd,t1_sd,z0hssi,z0h_tile,z0h_eff,                 &
  z0m_gb,z0mssi,z0m_tile,z0m_eff,rho_aresist,aresist,resist_b,     &
  rho_aresist_tile,aresist_tile,resist_b_tile,                     &
  r_b_dust,cd_std_dust,u_s_std_tile,                               &
  rhokh_1,rhokh_1_sice,rhokm_1,rhokm_land,rhokm_ssi,               &
- dtstar_tile,dtstar,rhokh_gb,anthrop_heat                         &
+ dtstar_tile,dtstar,rhokh_gb,rhokh_mix,anthrop_heat               &
 )
 
 
@@ -69,7 +69,13 @@ USE dust_param, ONLY : ndiv, z0_soil
 USE c_kappai, ONLY : kappa_seasurf,dzsea
 USE c_lheat
 
-USE bl_option_mod, ONLY : max_stress_grad, on
+USE bl_option_mod, ONLY :                                         &
+                    surfdivz0t                                    &
+                   ,fixed_z0t                                     &
+                   ,effective_z0                                  &
+                   ,use_correct_ustar                             &
+                   ,max_stress_grad                               &
+                   ,on
 
 USE nstypes, ONLY :                                               &
 !      imported scalars with intent(in)
@@ -88,11 +94,18 @@ USE surf_param, ONLY : h_blend_min                                &
                       ,z0sice                                     & 
                       ,z0h_z0m_miz                                & 
                       ,z0sice                                     & 
-                      ,z0h_z0m_sice 
+                      ,z0h_z0m_sice                               &
+                      ,emis_sea                                   &
+                      ,emis_sice
 
-USE switches, ONLY : i_modiscopt, i_aggregate_opt, iseaz0t,       &
-      cor_mo_iter, use_correct_ustar, iscrntdiag, l_snowdep_surf, &
-      l_flake_model, Fixed_Z0T, SurfDivZ0T, effective_z0
+USE switches, ONLY :                                              &
+                     i_modiscopt                                  &
+                    ,i_aggregate_opt                              &
+                    ,iseaz0t                                      &
+                    ,cor_mo_iter                                  &
+                    ,iscrntdiag                                   &
+                    ,l_snowdep_surf                               &
+                    ,l_flake_model
 
 USE urban_param, ONLY : hgt, hwr, ztm, disp, z0m_mat, z0h_z0m_c,  &
    z0h_z0m_rf
@@ -115,9 +128,14 @@ USE lake_mod, ONLY : lake_t_ice                                   &
                     ,g_dt
 USE soil_param, ONLY : hcice                                      &
                       ,hcwat
-use cable_data_mod, only : cable
+
+#if defined(UM_JULES)
+USE science_fixes_mod, ONLY: l_emis_ssi_full
+#endif
+
 USE parkind1, ONLY: jprb, jpim
 USE yomhook, ONLY: lhook, dr_hook
+use cable_data_mod, only : cable
 IMPLICIT NONE
 
 
@@ -262,8 +280,8 @@ REAL                                                              &
                        !    mass-flux at cloud base
 ,z0_tile(land_pts,ntiles)                                         &
                        ! IN Tile roughness lengths (m).
-,z0h_tile_bare(land_pts,ntiles)                                   & 
-                       ! IN Tile thermal roughness lengths (m) 
+,z0h_tile_bare(land_pts,ntiles)                                   &
+                       ! IN Tile thermal roughness lengths (m)
                        !    without snow cover
 ,z1_uv(tdims%i_start:tdims%i_end,tdims%j_start:tdims%j_end)       &
                        ! IN Height of lowest uv level (m).
@@ -379,6 +397,9 @@ REAL                                                              &
 ,chr1p5m_sice(tdims%i_start:tdims%i_end,tdims%j_start:tdims%j_end)&
                        ! OUT CHR1P5M for sea and sea-ice
                        !     (leads ignored).
+,e_sea(tdims%i_start:tdims%i_end,tdims%j_start:tdims%j_end)       &
+                       ! OUT Evaporation from sea times leads
+                       !     fraction (kg/m2/s). Zero over land.
 ,fme(tdims%i_start:tdims%i_end,tdims%j_start:tdims%j_end)         &
                        ! OUT Wind mixing energy flux (Watts/sq m).
 ,fqw_1(tdims%i_start:tdims%i_end,tdims%j_start:tdims%j_end)       &
@@ -405,6 +426,10 @@ REAL                                                              &
 ,h_blend_orog(tdims%i_start:tdims%i_end,tdims%j_start:tdims%j_end)&
                        ! OUT Blending height for orographic
                        !     roughness
+,h_sea(tdims%i_start:tdims%i_end,tdims%j_start:tdims%j_end)       &
+                       ! OUT Surface sensible heat flux over sea
+                       !     times leads fraction (W/m2).
+                       !     Zero over land.
 ,rhostar(tdims%i_start:tdims%i_end,tdims%j_start:tdims%j_end)     &
                        ! OUT Surface air density
 ,resfs(land_pts,ntiles)                                           &
@@ -512,6 +537,8 @@ REAL                                                              &
 !                            !     sea-ice
 ,rhokh_gb(tdims%i_start:tdims%i_end,tdims%j_start:tdims%j_end)    &
 !                            ! OUT Grid-box surface exchange coefficient
+,rhokh_mix(tdims%i_start:tdims%i_end,tdims%j_start:tdims%j_end)   &
+!                            ! OUT Exchange coeffs for moisture.
 ,epot_tile(land_pts,ntiles)  ! OUT EPOT for land tiles.
 
 
@@ -665,7 +692,7 @@ REAL                                                              &
 
 ! The next fields are temporary and used whilst sea ice exchange coeffs are
 !   not calculated per category
-INTEGER:: &
+INTEGER:: & 
  sice_pts_use, &
  sice_index_use(ssi_pts)
 
@@ -679,14 +706,7 @@ REAL, ALLOCATABLE ::                                              &
 
 !  Workspace for land tiles
 REAL                                                              &
- e_sea(tdims%i_start:tdims%i_end,tdims%j_start:tdims%j_end)       &
-                       ! Evaporation from sea times leads
-                       !     fraction (kg/m2/s). Zero over land.
-,h_sea(tdims%i_start:tdims%i_end,tdims%j_start:tdims%j_end)       &
-                       ! OUT Surface sensible heat flux over sea
-                       !     times leads fraction (W/m2).
-                       !     Zero over land.
-,cd_std(land_pts,ntiles)                                          &
+ cd_std(land_pts,ntiles)                                          &
                              ! Local drag coefficient for calc
 !                                  ! of interpolation coefficient
 ,cd_tile(land_pts,ntiles)                                         &
@@ -819,7 +839,6 @@ REAL                                                              &
 !                            ! "average" thermal conductivity of
 !                            ! lake-ice, lake and soil sandwich (W/m/K).
 
-
 ! dummy arrays required for sea and se-ice to create universal
 ! routines for all surfaces
 REAL                                                              &
@@ -827,7 +846,10 @@ REAL                                                              &
                                 ! Array of zeros
 ,array_one(t_i_length*t_j_length)                                 &
                                 ! Array of ones
-,array_negone(t_i_length*t_j_length)  ! Array of minus ones
+,array_negone(t_i_length*t_j_length)                              &
+                                ! Array of minus ones
+,array_emis(t_i_length*t_j_length)
+                                ! Emissivity expanded to an array
 
 INTEGER                                                           &
  array_zero_int(t_i_length*t_j_length)    ! Array of zeros
@@ -967,14 +989,14 @@ END DO
 
 ! Land tiles
 ! Z0_TILE contains the appropriate value for land-ice points, but has to
-! be modified for snow-cover on non-land-ice points. Thermal roughness 
-! lengths are set to be proportional to the tiled roughness length in 
-! the case of multiple tiles, but if tiled properties have already 
-! been aggregated, an adjustment for snow cover is required. In this case 
-! a ratio of 0.1 between the thermal and momentum roughness lengths over 
-! snow is assumed; to do otherwise would require reaggregation. In the 
-! case of multiple tiles, the assignment is delayed until the urban 
-! options have been considered. 
+! be modified for snow-cover on non-land-ice points. Thermal roughness
+! lengths are set to be proportional to the tiled roughness length in
+! the case of multiple tiles, but if tiled properties have already
+! been aggregated, an adjustment for snow cover is required. In this case
+! a ratio of 0.1 between the thermal and momentum roughness lengths over
+! snow is assumed; to do otherwise would require reaggregation. In the
+! case of multiple tiles, the assignment is delayed until the urban
+! options have been considered.
 ! 
 DO n=1,ntiles
   DO k=1,tile_pts(n)
@@ -984,18 +1006,18 @@ DO n=1,ntiles
       z0 = z0_tile(l,n) - 0.1 * snowdep_surf(l,n)
       zeta1 = MIN( 5.0e-4 , z0_tile(l,n)  )
       z0m_tile(l,n) = MAX( zeta1 , z0 )
-!     Set z0h_tile explicitly if this option is selected, 
-!     otherwise, it will be set for the first tile below. 
-      IF (l_aggregate .AND. i_aggregate_opt == 1) THEN 
-        z0 = z0h_tile_bare(l,n) - 0.1 * 0.1 * snowdep_surf(l,n) 
-        zeta1 = MIN( 5.0e-5 , z0h_tile_bare(l,n)  ) 
-        z0h_tile(l,n) = MAX( zeta1 , z0 ) 
-      END IF 
+!     Set z0h_tile explicitly if this option is selected,
+!     otherwise, it will be set for the first tile below.
+      IF (l_aggregate .AND. i_aggregate_opt == 1) THEN
+        z0 = z0h_tile_bare(l,n) - 0.1 * 0.1 * snowdep_surf(l,n)
+        zeta1 = MIN( 5.0e-5 , z0h_tile_bare(l,n)  )
+        z0h_tile(l,n) = MAX( zeta1 , z0 )
+      END IF
     ELSE
       z0m_tile(l,n) = z0_tile(l,n)
 !     Set z0h_tile explicitly if this option is selected,
 !     otherwise, it will be set for the first tile below.
-      IF (l_aggregate .AND. i_aggregate_opt == 1) & 
+      IF (l_aggregate .AND. i_aggregate_opt == 1) &
         z0h_tile(l,n) = z0h_tile_bare(l,n)
     END IF
 
@@ -1019,13 +1041,13 @@ DO n=1,ntiles
       z0m_tile(l,n) = ztm(l)
     END IF
 
-! 
-!   Set the thermal roughness length if aggregation is not being 
-!   carried out, or if the original scheme is being used.  
-!   It must be done here for consistency with the urban options. 
-    IF ( (.NOT.l_aggregate) .OR.                                        & 
-         (l_aggregate .AND. i_aggregate_opt == 0) )                     & 
-      z0h_tile(l,n) = z0h_z0m(n)*z0m_tile(l,n) 
+!
+!   Set the thermal roughness length if aggregation is not being
+!   carried out, or if the original scheme is being used. 
+!   It must be done here for consistency with the urban options.
+    IF ( (.NOT.l_aggregate) .OR.                                        &
+         (l_aggregate .AND. i_aggregate_opt == 0) )                     &
+      z0h_tile(l,n) = z0h_z0m(n)*z0m_tile(l,n)
     rib_tile(l,n) = 0.
     db_tile(l,n) = 0.
     wind_profile_factor(l,n)=1.0
@@ -1812,7 +1834,7 @@ ELSE
   sice_index_use(:) = sice_index_ncat(:,1)
   sice_frac_use(:)=sice_frac_ncat(:,1)
 END IF
-! End sea ice temporary code
+! End sea ice temporary code 
 
 
 ! DEPENDS ON: qsat_mix
@@ -2018,8 +2040,8 @@ CALL fcdch (                                                      &
    u_s_std_sea                                                    &
    )
 
-! z1_tq_top_sea is no longer required.
-DEALLOCATE(z1_tq_top_sea)
+! z1_tq_top_sea is no longer required. 
+DEALLOCATE(z1_tq_top_sea) 
 
 
 ! Sea and sea-ice
@@ -2062,9 +2084,17 @@ DO j=tdims%j_start,tdims%j_end
   END DO
 END DO
 
-! Sea
+! Sea 
 lh0=lc
 dzssi(:) = dzsea
+array_emis(:)=emis_sea
+#if defined(UM_JULES)
+IF (.NOT.l_emis_ssi_full) THEN
+!     Replicate initial implementation with omission of emissivity
+  array_emis(:)=1.0
+ENDIF
+#endif
+
 ! DEPENDS ON: sf_flux
 CALL sf_flux (                                                    &
    ssi_pts,sea_pts,fssi,                                          &
@@ -2074,7 +2104,7 @@ CALL sf_flux (                                                    &
    radnet(:,:,1),array_one,rhokh_1_sice,array_negone,array_zero,  &
    sea_frac,timestep,tl_1,tstar_sea,tstar_sea,                    &
    array_zero,array_zero,z0h_sea,z0msea,z1_tq_sea,lh0,            &
-   array_one,array_one,                                           &
+   array_emis,array_one,                                          &
    seasalinityfactor,array_zero,array_one,                        &
    fqw_1,ftl_1,                                                   &
    alpha1_sea,ashtf_prime_sea,e_sea,epot_sea,h_sea,               &
@@ -2086,8 +2116,15 @@ CALL sf_flux (                                                    &
 lh0=ls
 
 dzdummy(:)=2.0       ! as hconsdz_sice equals 2*kappa/dz
-! So in sf_flux, ashtf = 2 * hconsdz_sice/dzdummy, this will then give
-!        ashtf = hconsdz_sice as required
+! So in sf_flux, ashtf = 2 * hconsdz_sice/dzdummy, this will then give 
+!        ashtf = hconsdz_sice as required                     
+array_emis(:)=emis_sice
+#if defined(UM_JULES)
+IF (.NOT.l_emis_ssi_full) THEN
+!     Replicate initial implementation with omission of emissivity
+  array_emis(:)=1.0
+ENDIF
+#endif
 
 DO n=1, nice_use
   ! DEPENDS ON: sf_flux
@@ -2099,7 +2136,7 @@ DO n=1, nice_use
    radnet(:,:,n),array_one,rhokh_1_sice,array_negone,array_zero,  &
    sice_frac_ncat(:,n),timestep,tl_1,ti,tstar_sice_cat(:,:,n),    &
    array_zero,array_zero,z0h_ice,z0m_ice,z1_tq_sea,lh0,           &
-   array_one,array_one,                                           &
+   array_emis,array_one,                                          &
    1.0,array_zero,array_one,                                      &
    fqw_1,ftl_1,                                                   &
    alpha1_sice(:,:,n),ashtf_prime(:,:,n),fqw_ice(:,:,n),epot_ice, &
@@ -2378,7 +2415,7 @@ CALL sf_aero (                                                    &
  flandg,tile_frac,pstar,rhostar,tstar,vshr_land,vshr_ssi,         &
  cd_ssi,ch_ssi,cd_std_classic,ch_tile_classic,rhokh_gb,           &
  rho_aresist,aresist,resist_b,rho_aresist_tile,aresist_tile,      &
- resist_b_tile,r_b_dust,cd_std_dust                               &
+ resist_b_tile,r_b_dust,cd_std_dust,rhokh_mix                     &
  )
 
 ! set these roughness lengths which otherwise are unspecified
