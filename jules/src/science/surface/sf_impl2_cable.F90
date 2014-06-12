@@ -13,7 +13,7 @@
 !
 !--------------------------------------------------------------------
 !    Arguments :-
-SUBROUTINE sf_impl2 (                                             &
+SUBROUTINE sf_impl2_cable (                                             &
 ! IN values defining field dimensions and subset to be processed :
  land_pts,land_index,nice,nice_use,ntiles,tile_index,tile_pts,    &
  sm_levels,canhc_tile,canopy,flake,smc,tile_frac,wt_ext_tile,     &
@@ -92,6 +92,7 @@ USE solinc_data, ONLY: sky, l_skyview
 
 USE parkind1, ONLY: jprb, jpim
 USE yomhook, ONLY: lhook, dr_hook
+use cable_data_mod, only : cable, cable_control7
 IMPLICIT NONE
 !--------------------------------------------------------------------
 !  Inputs :-
@@ -764,6 +765,51 @@ IF ( .NOT. l_correct ) THEN
     END DO
   END DO
 
+!CABLE{
+  DO N=1,NTILES
+    DO L=1,LAND_PTS
+      MELT_TILE(L,N) = 0.
+    ENDDO
+  ENDDO
+
+  call cable_control7( dtl_1, dqw_1, T_SOIL, FTL_1, FQW_1,           &
+                         SURF_HT_FLUX_LAND, ECAN_TILE, ESOIL_TILE, EI_TILE,  &
+                         T1P5M_TILE, Q1P5M_TILE, MELT_TILE )
+                 
+  call cable_implicit_driver( cable% um% LS_RAIN, cable% um% CONV_RAIN, &
+                  cable% um% LS_SNOW, cable% um% CONV_SNOW, cable% im% dtl_1,  &
+                  cable% im% dqw_1, cable% im% T_SOIL, cable%cable% TSOIL_TILE,&
+                  cable% um% SMCL, cable% cable% SMCL_TILE,                    &
+                  cable% mp% timestep_width, cable% um%SMVCST, cable% um% STHF,&
+                  cable% cable% STHF_TILE, cable% um% STHU,&
+                  cable% cable% STHU_TILE, cable% um% snow_tile,               &
+                  cable% cable% SNOW_RHO1L, cable% cable% SNOW_FLG3L,          &
+                  cable% cable% SNOW_DEPTH3L, cable% cable% SNOW_MASS3L,       &
+                  cable% cable% SNOW_RHO3L, cable% cable% SNOW_TMP3L,          &
+                  cable% cable% SNOW_COND, cable% im% FTL_1,                   &
+                  cable% um% FTL_TILE, cable% im% FQW_1, cable% um% FQW_TILE,  &
+                  cable% um% TSTAR_TILE, cable% im% SURF_HT_FLUX_LAND,         &
+                  cable% im% ECAN_TILE, cable% im% ESOIL_TILE,                 &
+                  cable% im% EI_TILE, cable% um% RADNET_TILE,                  &
+                  cable% um% TOT_ALB,  cable% cable% SNow_AGE,                 &
+                  cable% um% CANOPY, cable% um% GS,                            &
+                  cable% im% T1P5M_TILE, cable% im% Q1P5M_TILE,                &
+                  cable% um% CANOPY_GB, cable% um% Fland,                      &
+                  cable% im% MELT_TILE, cable% um% DIM_CS1,                    &
+                  cable% um% DIM_CS2, cable% um% NPP,                          &
+                  cable% um% NPP_FT, cable% um% GPP,                           &
+                  cable% um% GPP_FT,cable% um% RESP_S,                         &
+                  cable% um% RESP_S_TOT,cable% um% RESP_S_TILE,                &
+                  cable% um% RESP_P,cable% um% RESP_P_FT,                      &
+                  cable% um% G_LEAF, &
+                  cable% hyd% sub_surf_roff, &
+                  cable% hyd% surf_roff, &
+                  cable% hyd% tot_tfall, &
+                  cable% hyd% LYING_SNOW &
+                  )
+
+!CABLE}
+
 
 
 !-----------------------------------------------------------------------
@@ -792,7 +838,8 @@ IF ( .NOT. l_correct ) THEN
     DO k=1,tile_pts(n)
       l = tile_index(k,n)
       tstar_tile_old(l,n) = tstar_tile(l,n)
-      tstar_tile(l,n) = tstar_tile_old(l,n) + dtstar_tile(l,n)
+!CABLE: use CABLE's tstar_tile
+!      tstar_tile(l,n) = tstar_tile_old(l,n) + dtstar_tile(l,n)
     END DO
   END DO
 
@@ -801,6 +848,34 @@ IF ( .NOT. l_correct ) THEN
 !! 7.  Surface evaporation components and updating of surface
 !!     temperature (P245, routine SF_EVAP).
 !-----------------------------------------------------------------------
+  IF(  cable% um% l_cable ) THEN
+    DO N=1,NTILES
+      DO L=1,LAND_PTS
+        ELAKE_TILE(L,N) = 0.
+        EI_TILE(L,N) = 0.
+      ENDDO
+    ENDDO
+
+    DO J=1,cable% mp% rows
+     DO I=1,cable% mp% row_length
+      ECAN(I,J) = 0.
+      ESOIL(I,J) = 0.
+     ENDDO
+    ENDDO
+
+    DO N=1,NTILES
+     DO K=1,TILE_PTS(N)
+       L = TILE_INDEX(K,N)
+       J=(LAND_INDEX(L)-1)/cable% mp% row_length + 1
+       I = LAND_INDEX(L) - (J-1)*cable% mp% row_length
+       ECAN(I,J) = ECAN(I,J) + TILE_FRAC(L,N)*ECAN_TILE(L,N)
+       ESOIL(I,J) = ESOIL(I,J) + TILE_FRAC(L,N)*ESOIL_TILE(L,N)          
+     ENDDO
+    ENDDO   
+    EXT = 0. ! MRD
+
+  ELSE ! ( cable% um% l_cable )
+
 ! DEPENDS ON: sf_evap
   CALL sf_evap (                                                  &
     land_pts,ntiles,                                              &
@@ -810,6 +885,7 @@ IF ( .NOT. l_correct ) THEN
     timestep,GAMMA,fqw_1,fqw_tile,ftl_1,ftl_tile,tstar_tile,      &
     ecan,ecan_tile,elake_tile,esoil,esoil_tile,ei_tile,ext        &
     )
+  ENDIF
 
 !-----------------------------------------------------------------------
 !!     Surface melting of sea-ice and snow on land tiles.
@@ -822,39 +898,40 @@ IF ( .NOT. l_correct ) THEN
   melt_ice_tile(:,:)=0.0
 
   DO n=1,ntiles
-! DEPENDS ON: sf_melt
-    CALL sf_melt (                                                &
-      land_pts,land_index,                                        &
-      tile_index(:,n),tile_pts(n),flandg,                         &
-      alpha1(:,n),ashtf_prime_tile(:,n),dtrdz_charney_grid_1,     &
-      resft(:,n),rhokh_tile(:,n),tile_frac(:,n),timestep,GAMMA,   &
-      ei_tile(:,n),fqw_1,ftl_1,fqw_tile(:,n),ftl_tile(:,n),       &
-      tstar_tile(:,n),snow_tile(:,n),snowdep_surf(:,n),           &
-      melt_tile(:,n)                                              &
-      )
+!CABLE:{
+!! DEPENDS ON: sf_melt
+!    CALL sf_melt (                                                &
+!      land_pts,land_index,                                        &
+!      tile_index(:,n),tile_pts(n),flandg,                         &
+!      alpha1(:,n),ashtf_prime_tile(:,n),dtrdz_charney_grid_1,     &
+!      resft(:,n),rhokh_tile(:,n),tile_frac(:,n),timestep,GAMMA,   &
+!      ei_tile(:,n),fqw_1,ftl_1,fqw_tile(:,n),ftl_tile(:,n),       &
+!      tstar_tile(:,n),snow_tile(:,n),snowdep_surf(:,n),           &
+!      melt_tile(:,n)                                              &
+!      )
 
 !-----------------------------------------------------------------------
 ! thermodynamic, flux contribution of melting ice on the FLake lake tile
 !-----------------------------------------------------------------------
-    IF (     (l_flake_model   ) &
-        .AND.(.NOT.l_aggregate) &
-        .AND.(n == lake       ) ) THEN
+!    IF (     (l_flake_model   ) &
+!        .AND.(.NOT.l_aggregate) &
+!        .AND.(n == lake       ) ) THEN
 
 ! lake_h_ice is only initialised if FLake is on.
-  lake_ice_mass=lake_h_ice * rho_ice
+!  lake_ice_mass=lake_h_ice * rho_ice
 
-! DEPENDS ON: sf_melt
-    CALL sf_melt (                                                &
-      land_pts,land_index,                                        &
-      tile_index(:,n),tile_pts(n),flandg,                         &
-      alpha1(:,n),ashtf_prime_tile(:,n),dtrdz_charney_grid_1,     &
-      resft(:,n),rhokh_tile(:,n),tile_frac(:,n),timestep,GAMMA,   &
-      ei_tile(:,n),fqw_1,ftl_1,fqw_tile(:,n),ftl_tile(:,n),       &
-      tstar_tile(:,n),lake_ice_mass,lake_ice_mass/rho_snow_const, &
-      melt_ice_tile(:,n)                                          &
-        )
-    END IF
-
+!! DEPENDS ON: sf_melt
+!    CALL sf_melt (                                                &
+!      land_pts,land_index,                                        &
+!      tile_index(:,n),tile_pts(n),flandg,                         &
+!      alpha1(:,n),ashtf_prime_tile(:,n),dtrdz_charney_grid_1,     &
+!      resft(:,n),rhokh_tile(:,n),tile_frac(:,n),timestep,GAMMA,   &
+!      ei_tile(:,n),fqw_1,ftl_1,fqw_tile(:,n),ftl_tile(:,n),       &
+!      tstar_tile(:,n),lake_ice_mass,lake_ice_mass/rho_snow_const, &
+!      melt_ice_tile(:,n)                                          &
+!        )
+!    END IF
+!CABLE:}
 !-----------------------------------------------------------------------
 !  Increment snow by sublimation and melt
 !-----------------------------------------------------------------------
@@ -883,6 +960,83 @@ IF ( .NOT. l_correct ) THEN
    END DO
   END DO
 
+!!CABLE{
+!!CABLE: taken out as vars unknown, howevermay not need
+!       IF(NICE  ==  1)THEN
+!       DO J=1,cable% mp% rows
+!        DO I=1,cable% mp% row_length
+!          DTSTAR=0.0
+!         IF ( FLANDG(I,J) <  1.0 .AND. ICE_FRACT(I,J) >  0.0 ) THEN
+!!-----------------------------------------------------------------------
+!!   Melt sea-ice if TSTAR > TSTARMAX
+!!-----------------------------------------------------------------------
+!           EI_SICE(I,J,:) = FQW_ICE(I,J,:)
+!           TSTARMAX = ICE_FRACT(I,J)*TM                                  &
+!     &         + (1.0 - ICE_FRACT(I,J))*TSTAR_SEA(I,J)
+!           !CABLE: taken out as vars unknown, howevermay not need
+!           !IF ( TSTAR_SSI0(I,J)  >   TSTARMAX ) THEN
+!           !  RHOKH1_PRIME = 1. / ( 1. / RHOKH_SICE(I,J)                &
+!     &     !                  + ICE_FRACT(I,J)*GAMMA*DTRDZ_CHARNEY_GRID_1(I,J) )
+!           !  DTSTAR = TSTARMAX - TSTAR_SSI0(I,J)
+!           !  LSMELT = (CP + (LC + LF)*ALPHA1_SICE(I,J))*RHOKH1_PRIME     &
+!     &     !                                            + ASHTF(I,J)
+!           !  DFTL_M = CP * RHOKH1_PRIME * DTSTAR
+!           !  DFQW_M = ALPHA1_SICE(I,J) * RHOKH1_PRIME * DTSTAR
+!           !  TSTAR_SSI0(I,J) = TSTARMAX
+!           !  SICE_MELT0(I,J) = - LSMELT * DTSTAR
+!           !  IF (SIMLT) SICE_MLT_HTF(I,J,1) = SICE_MELT0(I,J)
+!           !  FTL_1(I,J) = FTL_1(I,J) + (1.0-FLANDG(I,J))*DFTL_M
+!           !  FQW_1(I,J) = FQW_1(I,J) + (1.0-FLANDG(I,J))*DFQW_M
+!           !  EI_SICE(I,J,:) = EI_SICE(I,J,:) + DFQW_M
+!           !  FTL_ICE(I,J,:) = FTL_ICE(I,J,:) + DFTL_M
+!           !  FQW_ICE(I,J,:) = FQW_ICE(I,J,:) + DFQW_M
+!
+!           !ENDIF
+!
+!         ENDIF
+!        ENDDO
+!       ENDDO
+!
+!       ELSE
+!
+!        DO J=1,cable% mp% rows
+!         DO I=1,cable% mp% row_length
+!          IF ( FLANDG(I,J) <  1.0 .AND. ICE_FRACT(I,J) >  0.0 ) THEN   
+!!-----------------------------------------------------------------------
+!!   Melt sea-ice if TSTAR > TSTARMAX
+!!-----------------------------------------------------------------------
+!            EI_SICE(I,J,:) = FQW_ICE(I,J,:)
+!            DTSTAR=0.0
+!            DO N=1,NICE
+!              IF (ICE_FRACT_NCAT(I,J,N) >  0.0) THEN
+!                TSTARMAX = ICE_FRACT_NCAT(I,J,N)*TM
+!                IF (TSTAR_SIC(I,J,N) >  TSTARMAX) THEN
+!                  RHOKH1_PRIME = 1. / ( 1. / RHOKH_SICE(I,J)           &
+!     &                 + ICE_FRACT_NCAT(I,J,N)*GAMMA*DTRDZ_CHARNEY_GRID_1(I,J) )
+!                  DTSTAR = TSTARMAX - TSTAR_SIC(I,J,N)
+!                  LSMELT = (CP + (LC + LF)*ALPHA1_SICE(I,J))*RHOKH1_PRIME&
+!     &                                                 + ASHTF(I,J)
+!                  DFTL_M = CP * RHOKH1_PRIME * DTSTAR
+!                  DFQW_M = ALPHA1_SICE(I,J) * RHOKH1_PRIME * DTSTAR
+!                  TSTAR_SIC(I,J,N) = TSTARMAX
+!                  SICE_MELT(I,J,N) = - LSMELT * DTSTAR
+!                  IF (SIMLT) SICE_MLT_HTF(I,J,N) = SICE_MELT(I,J,N)
+!                  FTL_1(I,J)   = FTL_1(I,J) + (1.0-FLANDG(I,J))*DFTL_M
+!                  FQW_1(I,J)   = FQW_1(I,J) + (1.0-FLANDG(I,J))*DFQW_M
+!                  EI_SICE(I,J,:) = EI_SICE(I,J,:) + DFQW_M
+!                  FTL_ICE(I,J,:) = FTL_ICE(I,J,:) + DFTL_M
+!                  FQW_ICE(I,J,:) = FQW_ICE(I,J,:) + DFQW_M
+!
+!                ENDIF
+!              ENDIF
+!            ENDDO
+!          ENDIF
+!         ENDDO
+!        ENDDO
+!       ENDIF
+!
+!!CABLE}
+
   IF (     (l_flake_model   ) &
       .AND.(.NOT.l_aggregate) ) THEN
     DO j=tdims%j_start,tdims%j_end
@@ -907,8 +1061,9 @@ IF ( .NOT. l_correct ) THEN
         l = tile_index(k,n)
         j=(land_index(l)-1)/tdims%i_end + 1
         i = land_index(l) - (j-1)*tdims%i_end
-        radnet_tile(l,n) = sw_tile(l,n) +   emis_tile(l,n)*       &
-          sky(i,j)*( lw_down(i,j) - sbcon*tstar_tile(l,n)**4 )
+        !CABLE
+        !radnet_tile(l,n) = sw_tile(l,n) +   emis_tile(l,n)*       &
+        !  sky(i,j)*( lw_down(i,j) - sbcon*tstar_tile(l,n)**4 )
       END DO
     END DO
   ELSE
@@ -917,8 +1072,9 @@ IF ( .NOT. l_correct ) THEN
         l = tile_index(k,n)
         j=(land_index(l)-1)/tdims%i_end + 1
         i = land_index(l) - (j-1)*tdims%i_end
-        radnet_tile(l,n) = sw_tile(l,n) +   emis_tile(l,n)*       &
-                   ( lw_down(i,j) - sbcon*tstar_tile(l,n)**4 )
+        !CABLE
+        !radnet_tile(l,n) = sw_tile(l,n) +   emis_tile(l,n)*       &
+        !           ( lw_down(i,j) - sbcon*tstar_tile(l,n)**4 )
       END DO
     END DO
   END IF
@@ -947,8 +1103,9 @@ IF ( .NOT. l_correct ) THEN
                       + lf * (melt_tile(l,n)+melt_ice_tile(l,n))
         non_lake_frac(    i,j) = non_lake_frac(i,j) - tile_frac(l,n)
       ELSE
-        surf_ht_flux_land(i,j) = surf_ht_flux_land(i,j)           &
-                          + tile_frac(l,n) * surf_htf_tile(l,n)
+        !CABLE
+        !surf_ht_flux_land(i,j) = surf_ht_flux_land(i,j)           &
+        !                  + tile_frac(l,n) * surf_htf_tile(l,n)
       END IF
       tstar_land(i,j) = tstar_land(i,j)                           &
                  + tile_frac(l,n)*tstar_tile(l,n)
@@ -956,18 +1113,20 @@ IF ( .NOT. l_correct ) THEN
   END DO
 
 ! normalise the non-lake surface heat flux
-  IF (     (l_flake_model   ) &
-      .AND.(.NOT.l_aggregate) ) THEN
-    DO j=tdims%j_start,tdims%j_end
-      DO i=tdims%i_start,tdims%i_end
-! be careful about gridboxes that are all lake
-        IF (non_lake_frac(i,j) > EPSILON(0.0)) THEN
-          surf_ht_flux_land(i,j) =   surf_ht_flux_land(i,j)       &
-                                   / non_lake_frac(i,j)
-        ENDIF
-      END DO
-    END DO
-  END IF
+!CABLE
+!  IF (     (l_flake_model   ) &
+!      .AND.(.NOT.l_aggregate) ) THEN
+!    DO j=tdims%j_start,tdims%j_end
+!      DO i=tdims%i_start,tdims%i_end
+!! be careful about gridboxes that are all lake
+!        !IF (non_lake_frac(i,j) > EPSILON(0.0)) THEN
+!        !CABLE
+!        !  surf_ht_flux_land(i,j) =   surf_ht_flux_land(i,j)       &
+!        !                           / non_lake_frac(i,j)
+!        !ENDIF
+!      END DO
+!    END DO
+!  END IF
 
 
 !-----------------------------------------------------------------------
@@ -1508,4 +1667,4 @@ END IF ! IF .NOT. L_correct
 
 IF (lhook) CALL dr_hook('SF_IMPL2',zhook_out,zhook_handle)
 RETURN
-END SUBROUTINE sf_impl2
+END SUBROUTINE sf_impl2_cable
