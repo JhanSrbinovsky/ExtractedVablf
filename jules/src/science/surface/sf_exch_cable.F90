@@ -135,7 +135,7 @@ USE science_fixes_mod, ONLY: l_emis_ssi_full
 
 USE parkind1, ONLY: jprb, jpim
 USE yomhook, ONLY: lhook, dr_hook
-use cable_data_mod, only : cable
+use cable_data_mod, only : cable, cable_control6
 IMPLICIT NONE
 
 
@@ -186,6 +186,7 @@ REAL                                                              &
 ,dzsoil                                                           &
                        ! IN Soil or land-ice surface layer
                        !    thickness (m).
+,ardzsoil(cable%mp%sm_levels)                                     &
 ,flake(land_pts,ntiles)                                           &
                        ! IN Lake fraction.
 ,gc(land_pts,ntiles)                                              &
@@ -1117,11 +1118,19 @@ IF(formdrag ==  effective_z0) THEN
      )
   END DO
 END IF
+
+   CALL cable_control6( z1_tq, z1_uv,                                     & 
+                  Fland, ardzsoil, FTL_TILE,                    &
+                  FQW_TILE, TSTAR_TILE, U_S, U_S_STD_TILE,               &
+                  CD_TILE, CH_TILE, FRACA, rESFS, RESFT,                 &
+                  Z0H_TILE, Z0M_TILE, RECIP_L_MO_TILE, EPOT_TILE  )
+
 !-----------------------------------------------------------------------
 ! Call CABLE Land Surface Scheme, consistently with explicit nature  
 ! of call 
 !-----------------------------------------------------------------------
-  CALL cable_explicit_driver(                                        &
+! DEPENDS ON: cable_explicit_driver
+  CALL cable_explicit_driver(                                       &
              cable% mp% row_length, cable% mp% rows,                &
              cable% mp% land_pts, cable% mp% ntiles,                &
              cable% mp% npft, cable% mp% sm_levels,                 &
@@ -1146,14 +1155,13 @@ END IF
              cable% um% qw_1, & !not declared/defined unti bdy_layr
              cable% um% vshr_land, cable% um% pstar,                &
              cable% um% z1_tq, cable% um% z1_uv,                    &
-             1000.00, &!rm this later
              cable% tmp% L_tile_pts, cable% um% canopy,             &
              cable% um% Fland, cable% um% CO2_MMR,                  &
              cable% cable% sthu_tile, cable% cable% smcl_tile,      &
              cable% cable% sthf_tile, cable% um% sthu,              &
              cable% cable% tsoil_tile, cable% um% canht_ft,         &
              cable% um% lai_ft, cable% um% sin_theta_latitude,      &
-             cable% mp% dzsoil, cable% um% LAND_MASK,               &
+             cable% mp% dzsoil,                                     &
              cable% um% FTL_TILE, cable% um% FQW_TILE,              &
              cable% um% TSTAR_TILE, cable% um% U_S,                 &
              cable% um% U_S_STD_TILE, cable% um% CD_TILE,           &

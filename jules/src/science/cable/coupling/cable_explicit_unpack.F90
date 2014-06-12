@@ -34,6 +34,12 @@
 !--- pass land-surface quantities calc'd by CABLE in explicit call ---!
 !--- back to UM.                                                   ---!
 !---------------------------------------------------------------------!
+MODULE cable_expl_unpack_mod
+
+implicit none
+
+contains
+
 SUBROUTINE cable_expl_unpack( FTL_TILE, FQW_TILE,       &
                            TSTAR_TILE, &
                            U_S, U_S_STD_TILE, &
@@ -215,3 +221,4 @@ END SUBROUTINE cable_expl_unpack
 !============================================================================
 !============================================================================
 
+END MODULE cable_expl_unpack_mod

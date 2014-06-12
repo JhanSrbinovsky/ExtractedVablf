@@ -90,7 +90,7 @@ End interface cond_print
       REAL, POINTER ::                                                      &
          timestep_width
       
-      ! vn8.6 uses as array (was REAL in 8.2)
+      ! JULES uses as array (was REAL in 8.2)
       REAL, DIMENSION(:), POINTER ::                                           &
          dzsoil
       
@@ -114,25 +114,34 @@ End interface cond_print
 
    ! cable prognostic_vars
    type cable_vars
-      ! vn8.6 uses as REAL (was integer in 8.2)
-      real, DIMENSION(:,:), POINTER :: &
+      ! JULES uses as:
+      !real, DIMENSION(:,:), POINTER :: &
+      integer, DIMENSION(:), POINTER :: &
          snow_flg3l
       
-      REAL, DIMENSION(:,:), POINTER :: &
+      ! JULES uses as:
+      !REAL, DIMENSION(:,:), POINTER :: &
+      REAL, DIMENSION(:), POINTER :: &
          snow_rho1l,    & !
          snow_age
 
-      REAL, DIMENSION(:,:,:), POINTER :: &
+      ! JULES uses as:
+      !REAL, DIMENSION(:,:,:), POINTER :: &
+      REAL, DIMENSION(:), POINTER :: &
          tsoil_tile, &
          smcl_tile, &
          sthf_tile, &
          snow_depth3l, &
          snow_mass3l, &
          snow_tmp3l, &
-         snow_rho3l, &  
-         sthu_tile !jhan: c nwe kill this
+         snow_rho3l
 
       REAL, DIMENSION(:,:,:), POINTER :: &
+         sthu_tile !jhan: c nwe kill this
+
+      ! JULES uses as:
+      REAL, DIMENSION(:,:,:), POINTER :: &
+      !REAL, DIMENSION(:), POINTER :: &
          snow_cond ! no init from file
 
    end type cable_vars
@@ -169,7 +178,7 @@ End interface cond_print
 
       INTEGER, DIMENSION(:,:), POINTER ::                                      &
          tile_index
-       ! vn8.6 uses as 2D-array (was 1-D in 8.2)
+       ! JULES uses as 2D-array (was 1-D in 8.2)
 !         bexp, & !
 !         hcon, & !
 !         satcon, & !
@@ -177,7 +186,7 @@ End interface cond_print
 !         smvcst, & !
 !         smvcwt, & !
 !         smvccl!, & !
-!         ! vn8.6 uses these as 1-D [below] (was REAL in 8.2)
+!         ! JULES uses these as 1-D [below] (was REAL in 8.2)
 !         !albsoil, &
 !         !CANOPY_GB
 
@@ -203,7 +212,7 @@ End interface cond_print
          sthf, &
          tot_alb
 
-      ! vn8.6 uses as 2D- (was 3-D)
+      ! JULES uses as 2D- (was 3-D)
       !REAL, DIMENSION(:,:,:), POINTER :: &
       !   land_alb
       
@@ -230,9 +239,6 @@ End interface cond_print
       REAL, DIMENSION(:,:,:), POINTER :: &
          tl_1, &
          qw_1
-
-       LOGICAL, dimension(:,:), pointer :: & 
-         LAND_MASK
 
        real, dimension(:,:), pointer :: & 
          SW_DOWN, &  
@@ -486,6 +492,7 @@ SUBROUTINE cable_control( UM_eq_TRUE, L_cable, a_step, timestep_len, row_length,
       !endif
       allocate( cable% um% sin_theta_latitude(row_length,rows) )
       allocate( cable% cable% SNOW_COND(land_pts,NTILES,3))
+      allocate( cable% cable% SNOW_flg3L(land_pts*NTILES))
       allocate( cable% cable% STHU_TILE(land_pts,NTILES,sm_levels))
       allocate( cable% tmp% L_TILE_PTS(land_pts,NTILES))
       !this can be deleted once rm from cable_explicit_driver (call/recieve )
@@ -516,16 +523,27 @@ SUBROUTINE cable_control( UM_eq_TRUE, L_cable, a_step, timestep_len, row_length,
       cable% um% dim_cs1           => dim_cs1
       cable% um% dim_cs2           => dim_cs2
       ! JULES uses theseCABLE prognostics
-      cable% cable% tsoil_tile       => soil_temp_CABLE
-      cable% cable% smcl_tile        => smcl_CABLE
-      cable% cable% sthf_tile        => sthf_CABLE
-      cable% cable% snow_depth3l     => snow_depth_CABLE
-      cable% cable% snow_mass3l      => snow_mass_CABLE
-      cable% cable% snow_tmp3l       => snow_temp_CABLE
-      cable% cable% snow_rho3l       => snow_rho_CABLE
-      cable% cable% snow_flg3l       => snow_flg3l_CABLE
-      cable% cable% snow_rho1l       => snow_rho1l_CABLE
-      cable% cable% snow_age         => snow_age_CABLE
+      !cable% cable% tsoil_tile       => soil_temp_CABLE
+      !cable% cable% smcl_tile        => smcl_CABLE
+      !cable% cable% sthf_tile        => sthf_CABLE
+      !cable% cable% snow_depth3l     => snow_depth_CABLE
+      !cable% cable% snow_mass3l      => snow_mass_CABLE
+      !cable% cable% snow_tmp3l       => snow_temp_CABLE
+      !cable% cable% snow_rho3l       => snow_rho_CABLE
+      !cable% cable% snow_flg3l       => snow_flg3l_CABLE
+      !cable% cable% snow_rho1l       => snow_rho1l_CABLE
+      !cable% cable% snow_age         => snow_age_CABLE
+
+      cable% cable% tsoil_tile       =>  tsoil_tile   
+      cable% cable% smcl_tile        =>  smcl_tile    
+      cable% cable% sthf_tile        =>  sthf_tile    
+      cable% cable% snow_depth3l     =>  snow_depth3l 
+      cable% cable% snow_mass3l      =>  snow_mass3l  
+      cable% cable% snow_tmp3l       =>  snow_tmp3l   
+      cable% cable% snow_rho3l       =>  snow_rho3l   
+      cable% cable% snow_rho1l       =>  snow_rho1l   
+      cable% cable% snow_age         =>  snow_age     
+      cable% cable% snow_flg3l       =   int(snow_flg3l)   
 
       !jhan: re-implement sin_theta_lat by computing here      
       !if( UM_eq_TRUE) then
@@ -735,30 +753,30 @@ subroutine print_control_args()
    !print *,'jhan:shape:sub_surf_roff ',shape(sub_surf_roff)
    !print *,'jhan:shape:tot_tfall ',    shape(tot_tfall)
    
-   print *,'jhan:npft ',         npft
-   print *,'jhan:tile_frac ',    tile_frac(1,1)
-   print *,'jhan:snow_tile ',    snow_tile(1,1)
-   print *,'jhan:vshr_land ',    vshr_land(1,1)
-   print *,'jhan:canopy ',       canopy(1,1)
-   print *,'jhan:canht_ft ',     canht_ft(1,1)
-   print *,'jhan:lai_ft ',       lai_ft(1,1)
-   print *,'jhan:conv_rain ',    conv_rain(1,1)
-   print *,'jhan:conv_snow ',    conv_snow(1,1)
-   print *,'jhan:NPP ',          NPP(1)
-   print *,'jhan:NPP_FT ',       NPP_FT(1,1)
-   print *,'jhan:GPP ',          GPP(1)
-   print *,'jhan:GPP_FT ',       GPP_FT(1,1)
-   print *,'jhan:RESP_S ',       RESP_S(1,1)
-   print *,'jhan:rESP_S_TOT ',   rESP_S_TOT(1)
-   print *,'jhan:RESP_S_TILE ',  RESP_S_TILE(1,1)
-   print *,'jhan:RESP_P ',       RESP_P(1)
-   print *,'jhan:RESP_P_FT ',    RESP_P_FT(1,1)
-   print *,'jhan:G_LEAF ',       G_LEAF(1,1)
-   print *,'jhan:Radnet_TILE ',  Radnet_TILE(1,1)
-   print *,'jhan:Lying_snow ',   Lying_snow(1)
-   print *,'jhan:surf_roff ',    surf_roff(1)
-   print *,'jhan:sub_surf_roff ',sub_surf_roff(1)
-   print *,'jhan:tot_tfall ',    tot_tfall(1)
+   !print *,'jhan:npft ',         npft
+   !print *,'jhan:tile_frac ',    tile_frac(1,1)
+   !print *,'jhan:snow_tile ',    snow_tile(1,1)
+   !print *,'jhan:vshr_land ',    vshr_land(1,1)
+   !print *,'jhan:canopy ',       canopy(1,1)
+   !print *,'jhan:canht_ft ',     canht_ft(1,1)
+   !print *,'jhan:lai_ft ',       lai_ft(1,1)
+   !print *,'jhan:conv_rain ',    conv_rain(1,1)
+   !print *,'jhan:conv_snow ',    conv_snow(1,1)
+   !print *,'jhan:NPP ',          NPP(1)
+   !print *,'jhan:NPP_FT ',       NPP_FT(1,1)
+   !print *,'jhan:GPP ',          GPP(1)
+   !print *,'jhan:GPP_FT ',       GPP_FT(1,1)
+   !print *,'jhan:RESP_S ',       RESP_S(1,1)
+   !print *,'jhan:rESP_S_TOT ',   rESP_S_TOT(1)
+   !print *,'jhan:RESP_S_TILE ',  RESP_S_TILE(1,1)
+   !print *,'jhan:RESP_P ',       RESP_P(1)
+   !print *,'jhan:RESP_P_FT ',    RESP_P_FT(1,1)
+   !print *,'jhan:G_LEAF ',       G_LEAF(1,1)
+   !print *,'jhan:Radnet_TILE ',  Radnet_TILE(1,1)
+   !print *,'jhan:Lying_snow ',   Lying_snow(1)
+   !print *,'jhan:surf_roff ',    surf_roff(1)
+   !print *,'jhan:sub_surf_roff ',sub_surf_roff(1)
+   !print *,'jhan:tot_tfall ',    tot_tfall(1)
   
    !print *,''
    !print *,'jhan:control2_var:tile_frac '
@@ -910,7 +928,7 @@ END SUBROUTINE cable_glue_rad_init
 
 !===============================================================================
 ! vn8.2 WAS SUBROUTINE cable_sf_exch( + rho_water in args as well
-SUBROUTINE cable_control6( z1_tq, z1_uv, Fland, dzsoil, LAND_MASK, FTL_TILE, &
+SUBROUTINE cable_control6( z1_tq, z1_uv, Fland, dzsoil, FTL_TILE, &
              FQW_TILE, TSTAR_TILE, U_S, U_S_STD_TILE, CD_TILE, CH_TILE, FRACA, &
              rESFS, RESFT, Z0H_TILE, Z0M_TILE, RECIP_L_MO_TILE, EPOT_TILE )
 
@@ -940,13 +958,9 @@ SUBROUTINE cable_control6( z1_tq, z1_uv, Fland, dzsoil, LAND_MASK, FTL_TILE, &
 
    real, dimension(:), target :: & 
       !FLAND(land_pts)
-      FLAND(:)
-
-   logical, dimension(:,:), target :: & 
-      LAND_MASK
+      FLAND
 
    real, dimension(ms), target :: dzsoil
-   !real, target :: dzsoil
  
       cable% um% Z1_TQ => Z1_TQ
       cable% um% Z1_UV => Z1_UV
@@ -970,8 +984,6 @@ SUBROUTINE cable_control6( z1_tq, z1_uv, Fland, dzsoil, LAND_MASK, FTL_TILE, &
       cable% tmp% rho_water => rho_water
       
       cable% um% FLAND => FLAND
-     
-      cable% um% LAND_MASK => LAND_MASK
      
       cable% mp% dzsoil => dzsoil
        

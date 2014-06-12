@@ -1034,7 +1034,7 @@ END DO
 !!     diagnostic calculations, are also evaluated if requested.
 !-----------------------------------------------------------------------
 
-! DEPENDS ON: sf_exch
+! DEPENDS ON: sf_exch_cable
 CALL sf_exch_cable (                                                    &
  land_pts,ntiles,land_index,                                      &
  tile_index,tile_pts,fland,                                       &

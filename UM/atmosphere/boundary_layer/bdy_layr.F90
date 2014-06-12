@@ -1034,8 +1034,9 @@ REAL, INTENT(OUT) ::                                                    &
 ! Initialise JULES dummy variable for o3 concentration
     o3_dummy(:) = 0.
 
-! DEPENDS ON: sf_expl_l
-    CALL sf_expl_l (                                                    &
+! DEPENDS ON: sf_expl_l_cable
+    !CALL sf_expl_l (                                                    &
+    CALL sf_expl_l_cable (                                                    &
 ! IN values defining field dimensions and subset to be processed :
      land_pts, nice_use,                                                &
 ! IN  parameters for iterative SISL scheme

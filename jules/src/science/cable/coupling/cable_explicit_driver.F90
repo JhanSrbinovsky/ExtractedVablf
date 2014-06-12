@@ -40,11 +40,11 @@ SUBROUTINE cable_explicit_driver( row_length, rows, land_pts, ntiles,npft,     &
                                   snow_tmp3l, snow_mass3l, sw_down, lw_down,   &
                                   cos_zenith_angle, surf_down_sw, ls_rain,     &
                                   ls_snow, tl_1, qw_1, vshr_land, pstar, z1_tq,&
-                                  z1_uv, rho_water, L_tile_pts, canopy_tile,   &
+                                  z1_uv, L_tile_pts, canopy_tile,   &
                                   Fland, CO2_MMR, sthu_tile, smcl_tile,        &
                                   sthf_tile, sthu, tsoil_tile, canht_ft,       &
                                   lai_ft, sin_theta_latitude, dzsoil,          &
-                                  LAND_MASK, FTL_TILE,  &
+                                  FTL_TILE,  &
                                   FQW_TILE, TSTAR_TILE,   &
                                   U_S, U_S_STD_TILE,&
                                   CD_TILE, CH_TILE,   &
@@ -68,9 +68,9 @@ SUBROUTINE cable_explicit_driver( row_length, rows, land_pts, ntiles,npft,     &
    !--- subr to call CABLE model
    USE cable_cbm_module, ONLY : cbm
 
-   USE cable_def_types_mod, ONLY : mp, ms, ssnow, rough, canopy, air, rad,     &
-                                   met
+   USE cable_def_types_mod, ONLY : mp, ms
 
+   USE cable_expl_unpack_mod
    !--- include subr called to write data for testing purposes 
    USE cable_diag_module
 
@@ -101,12 +101,8 @@ SUBROUTINE cable_explicit_driver( row_length, rows, land_pts, ntiles,npft,     &
       tile_index ,& ! index of tile points being processed
       isnow_flg3l   ! 3 layer snow flag
 
-   !--- TRUE if land, F elsewhere.
-   !jhan:rm land_mask
-   LOGICAL,DIMENSION(row_length,rows) :: land_mask   
-
    !___UM parameters: water density, soil layer thicknesses 
-   REAL :: rho_water 
+   REAL, parameter :: rho_water = 1000.
    REAL,  DIMENSION(sm_levels) :: dzsoil
 
    !___UM soil/snow/radiation/met vars
@@ -238,8 +234,10 @@ SUBROUTINE cable_explicit_driver( row_length, rows, land_pts, ntiles,npft,     &
  
    INTEGER, SAVE ::  iDiag0=0,iDiag1=0, iDiag2=0
     
-   isnow_flg3l = floor( snow_flg3l )
+   !isnow_flg3l = floor( snow_flg3l )
+   isnow_flg3l = int( snow_flg3l )
 
+print *, "jhan:cable_explicit1 "
 
    !--- initialize cable_runtime% switches 
    IF(first_cable_call) THEN
