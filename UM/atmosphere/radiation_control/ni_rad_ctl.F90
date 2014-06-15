@@ -704,6 +704,7 @@
 
       END IF
 
+print *, "jhan:ni_rad_ctl:PRE glue_rad"
 ! DEPENDS ON: glue_rad
        CALL Glue_Rad (                                                  &
 ! Parallel variables
@@ -837,6 +838,7 @@
      &,   Error_code  )
 
 
+print *, "jhan:ni_rad_ctl:POST glue_rad"
       IF (lrad_diag_mode) THEN
 
 ! For diagnostic mode, the Intent(out) variables are set to zero.
