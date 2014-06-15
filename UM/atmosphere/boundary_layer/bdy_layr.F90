@@ -1013,6 +1013,7 @@ REAL, INTENT(OUT) ::                                                    &
 
   ! these vars declared for the first time here are passed to CABLE as tl_1, qw_1
   call cable_control3( tl, qw )
+  print *,"jhan:bdy_layr:POST cable_control3"
 
 ! DEPENDS ON: bdy_expl1
   CALL bdy_expl1 (                                                      &
