@@ -1121,8 +1121,8 @@ SUBROUTINE imp_solver (                                                 &
      dqw_nt,dtl_nt,qw,tl,dqw1,dtl1,ct_ctq,ctctq1,dqw,dtl,cq_cm_u,cq_cm_v&
       )
 
-! DEPENDS ON: SF_IMPL2
-    CALL sf_impl2 (                                                     &
+! DEPENDS ON: SF_IMPL2_cable
+    CALL sf_impl2_cable (                                                     &
 ! IN values defining field dimensions and subset to be processed :
      land_pts,land_index,nice,nice_use,ntiles,tile_index,tile_pts,      &
      sm_levels,canhc_tile,canopy,flake,smc,tile_frac,wt_ext_tile,       &
@@ -1221,8 +1221,8 @@ SUBROUTINE imp_solver (                                                 &
      dqw_nt,dtl_nt,qw,tl,dqw1,dtl1,ct_ctq,ctctq1,dqw,dtl,cq_cm_u,cq_cm_v&
       )
 
-! DEPENDS ON: SF_IMPL2
-    CALL sf_impl2 (                                                     &
+! DEPENDS ON: SF_IMPL2_cable
+    CALL sf_impl2_cable (                                                     &
 ! IN values defining field dimensions and subset to be processed :
      land_pts,land_index,nice,nice_use,ntiles,tile_index,tile_pts,      &
      sm_levels,canhc_tile,canopy,flake,smc,tile_frac,wt_ext_tile,       &
