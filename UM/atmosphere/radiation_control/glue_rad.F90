@@ -1305,6 +1305,7 @@ END IF ! vatpoles
 ! Section INI. Initialisation of stash output variables.
 ! ----------------------------------------------------------------------
   call cable_glue_rad_init( surf_down_sw )
+print *, "jhan:glue_rad:POST glue_rad_init"
 
   l_co2_3d = l_co2_interactive
 
@@ -2061,10 +2062,15 @@ END IF ! vatpoles
             open_sea_albedo(1,1,1,j_sw) )
 
 
+    call cable_control5( alb_tile, land_albedo,         &
+                  TILE_PTS, TILE_INDEX, surf_down_sw )        
+print *, "jhan:glue_rad:POST control 5"
+
 !-----------------------------------------------------------------------
 ! Calculate tile albedos. ntype is taken from a module within the
 ! routine.
 !-----------------------------------------------------------------------
+print *, "jhan:glue_rad:PRE tile_albedo"
 ! DEPENDS ON: tile_albedo
           CALL tile_albedo ( row_length*rows,                           &
             land_field,land_index,ntiles,type_pts,                      &
@@ -2075,6 +2081,7 @@ END IF ! vatpoles
             lai,rgrain, snow_tile,soot,tstar_tile,                      &
             z0_tile, alb_tile,                                          &
             land_albedo(1,1,1,j_sw),albobs_sc,can_rad_mod )
+print *, "jhan:glue_rad:POST tile_albedo"
 ! Write the albedo scalings to sw_diag, if requested:
           IF (SW_diag(j_sw)%l_vis_albedo_sc) THEN
             DO k =1, ntiles
@@ -2099,7 +2106,7 @@ END IF ! vatpoles
       END DO ! loop over radiation calls
 
       !CABLE
-      tile_frac = 0.
+      !tile_frac = 0.
 
       DO j_sw = n_swcall, 1, -1
 ! Set COSP flag only on prognostic radiation steps
@@ -3166,6 +3173,7 @@ ipar=1
            + sw_tile(l,n) * tile_frac(l,n)
       END DO
     END DO
+print *, "jhan:glue_rad:3176"
 
 !   Set up net surface SW on sea ice categories.
 
@@ -3880,6 +3888,7 @@ ipar=1
         t_rad_land = SQRT( SQRT( t_rad_land / emis_land ) )
       END WHERE
 
+print *, "jhan:glue_rad:3891"
 
 ! Effective surface radiative temperature over sea ice
       t_rad_sice(:,:) = 0.0
@@ -4349,6 +4358,7 @@ ipar=1
             l_scale_inc = .TRUE.
 
 
+print *, "jhan:glue_rad:4360"
 ! DEPENDS ON: r2_lwrad3z
             CALL r2_lwrad3z(error_code,                                 &
 ! Input data
@@ -4503,6 +4513,7 @@ ipar=1
 
 !$OMP END PARALLEL
 
+print *, "jhan:glue_rad:4516"
 #if !defined(SCMA)
 
 ! Radiative fluxes may not have been calculated at all
@@ -5297,9 +5308,6 @@ ipar=1
 #endif
 
 
-    call cable_control5( alb_tile, land_albedo,         &
-                  TILE_PTS, TILE_INDEX, surf_down_sw )        
-
     DEALLOCATE ( t_incr_diagnostic )
 
 ! Deallocate the diagnostic space that is no longer required.
@@ -5360,5 +5368,6 @@ ipar=1
     CALL ereport(routinename, error_code, cmessage)
   END IF
 
+print *, "jhan:glue_rad: End"
   IF (lhook) CALL dr_hook('GLUE_RAD',zhook_out,zhook_handle)
 END SUBROUTINE glue_rad
