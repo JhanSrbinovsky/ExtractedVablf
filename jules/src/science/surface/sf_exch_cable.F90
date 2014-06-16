@@ -23,7 +23,7 @@ SUBROUTINE sf_exch_cable (                                              &
  tile_index,tile_pts,fland,flandg,                                &
  nice_use,                                                        &
  nsnow,ds,hcons_snow,hconsdz_sice,                                &
- bq_1,bt_1,canhc_tile,canopy,catch,dzsoil,flake,gc,hcons,         &
+ bq_1,bt_1,canhc_tile,canopy,catch,ardzsoil,flake,gc,hcons,         &
  can_model,catch_snow, lq_mix_bl,                                 &
  ho2r2_orog,ice_fract_cat,snowdepth,snow_tile,pstar,qw_1,radnet,  &
  radnet_tile,sil_orog,smvcst,tile_frac,timestep,                  &
@@ -1125,6 +1125,7 @@ END IF
                   CD_TILE, CH_TILE, FRACA, rESFS, RESFT,                 &
                   Z0H_TILE, Z0M_TILE, RECIP_L_MO_TILE, EPOT_TILE  )
 
+  print *,"jhan:sf_exch_:POST cable_control6"
 !-----------------------------------------------------------------------
 ! Call CABLE Land Surface Scheme, consistently with explicit nature  
 ! of call 
@@ -1172,6 +1173,7 @@ END IF
              cable% um% EPOT_TILE, 1,                               &
              cable% mp% timestep_number, 1 )
 
+  print *,"jhan:sf_exch_:POST cable_explicit"
 
 !-----------------------------------------------------------------------
 ! Calculate RESFT with neutral CH and EPDT=0 for use in calculation

@@ -909,6 +909,7 @@ END IF
 
 IF ( cable% um% l_cable ) then
   if(cable% mp% timestep_number .gt. 1) then
+print *, "jhan:tile_albedo:PRE _rad_driver"
 ! DEPENDS ON: cable_rad_driver.o
    CALL cable_rad_driver( cable% forcing% ShortWave,                           &
           cable% um% cos_zenith_angle, cable% um% SNOW_TILE,                   &
@@ -918,6 +919,7 @@ IF ( cable% um% l_cable ) then
           ! the next 2 same vars are available here anyway
           cable% um% LAND_ALBEDO, cable% um% ALB_TILE, &
           cable% um% LAND_ALB )
+print *, "jhan:tile_albedo:POST _rad_driver"
    endif  
 endif
 

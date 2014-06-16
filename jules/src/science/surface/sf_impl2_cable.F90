@@ -771,11 +771,13 @@ IF ( .NOT. l_correct ) THEN
       MELT_TILE(L,N) = 0.
     ENDDO
   ENDDO
-
-  call cable_control7( dtl_1, dqw_1, T_SOIL, FTL_1, FQW_1,           &
+!jhan: dummy define intent(inout) radnet_tile
+  radnet_tile = 0.
+  call cable_control7( dtl1_1, dqw1_1, T_SOIL, FTL_1, FQW_1,           &
                          SURF_HT_FLUX_LAND, ECAN_TILE, ESOIL_TILE, EI_TILE,  &
                          T1P5M_TILE, Q1P5M_TILE, MELT_TILE )
-                 
+  print *,"jhan:sf_impl_:PRE cable_control7"
+! DEPENDS ON: cable_implicit_driver
   call cable_implicit_driver( cable% um% LS_RAIN, cable% um% CONV_RAIN, &
                   cable% um% LS_SNOW, cable% um% CONV_SNOW, cable% im% dtl_1,  &
                   cable% im% dqw_1, cable% im% T_SOIL, cable%cable% TSOIL_TILE,&
@@ -807,6 +809,7 @@ IF ( .NOT. l_correct ) THEN
                   cable% hyd% tot_tfall, &
                   cable% hyd% LYING_SNOW &
                   )
+  print *,"jhan:sf_impl_:POST cable_implicit"
 
 !CABLE}
 
