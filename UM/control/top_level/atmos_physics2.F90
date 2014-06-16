@@ -3285,10 +3285,6 @@ END IF ! vatpoles
 #endif
 
    !print *,'jhan:atmos:mype, row_length, rows ',mype, row_length, rows 
-if(mype==0 .OR. mype < 20) then
-   print *, ""
-   print *, "jhan:atmos:pre control2"
-endif
 
    call cable_control2( &
                      npft, &
@@ -3316,6 +3312,7 @@ endif
                      sub_surf_roff, &
                      tot_tfall &
           )
+if(mype==0 ) print *, "jhan:atmos_physics2:POST control2"
 
   IF (L_bl) THEN
 !
@@ -3339,6 +3336,7 @@ endif
                       pdims_s%j_start:pdims_s%j_end,2:bl_levels))
 #endif
 
+print *, "jhan:atmos_physics2:PRE ni_bl_ctl"
 ! DEPENDS ON: ni_bl_ctl
       CALL NI_bl_ctl (                                                  &
 ! IN parameters for SISL scheme
@@ -3412,6 +3410,7 @@ endif
  t1_sd,q1_sd,ntml,nbdsc,ntdsc,wstar,wthvs,uw0,vw0,rhokm,rhokh           &
  )
 
+print *, "jhan:atmos_physics2:POST ni_bl_ctl"
       IF (l_quick_ap2) THEN
 ! save outputs for second EG cycle
 ! N.B. any new OUT data added to ni_bl_ctl will need to be saved here
@@ -5980,6 +5979,7 @@ DEALLOCATE(f_ngstress_v)
 
 #endif
 
+print *, "jhan:atmos_physics2: End "
       IF (lhook) CALL dr_hook('ATMOS_PHYSICS2',zhook_out,zhook_handle)
       RETURN
       END SUBROUTINE Atmos_Physics2

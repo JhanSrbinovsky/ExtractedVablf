@@ -2284,11 +2284,6 @@ IF (l_physics .AND. errorstatus == 0) THEN
       END IF
     END IF
 
-if(mype==0) then
-   print *, ""
-   print *, "jhan:atm_step:pre cable_control "
-endif
-
    CALL cable_control( & 
                !in 8.2 vn: pre pass timestep_number{
                !CALL cable_atm_step(             &
@@ -2330,6 +2325,11 @@ endif
 !            !jhan: these were used in JULES
 !            !canopy_gb , land_albedo 
             canopy_water, land_alb )
+
+if(mype==0) then
+   print *, ""
+   print *, "jhan:atm_step:POST cable_control "
+endif
 
 ! DEPENDS ON: atmos_physics1
         Call Atmos_Physics1(                                             &

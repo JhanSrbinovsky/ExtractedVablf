@@ -883,7 +883,7 @@ SUBROUTINE cable_control5( alb_tile, land_albedo,         &
 
    Real, dimension(:,:,:) :: surf_down_sw
 
-   Real, dimension(cable% mp% rows, cable% mp% row_length,4), target ::                       &
+   Real, dimension(cable% mp% rows, cable% mp% row_length,4), target ::                 &
       land_albedo
 
 

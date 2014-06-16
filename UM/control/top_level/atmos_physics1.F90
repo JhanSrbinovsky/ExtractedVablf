@@ -2477,7 +2477,7 @@ sea_salt: IF (((l_use_seasalt_direct .OR. l_use_seasalt_indirect).AND.  &
       END IF
  
       If (L_radiation) then
-
+print *, "jhan:atmos_physics1:PRE Ni_rad_ctl"
 ! DEPENDS ON: ni_rad_ctl
        Call NI_rad_ctl (                                                &
 
@@ -2608,6 +2608,7 @@ sea_salt: IF (((l_use_seasalt_direct .OR. l_use_seasalt_indirect).AND.  &
 ! error information
      &, Error_code  )
 
+print *, "jhan:atmos_physics1:POST Ni_rad_ctl"
 ! Check error condition
         IF (Error_code > 0) THEN
 
@@ -3231,6 +3232,7 @@ sea_salt: IF (((l_use_seasalt_direct .OR. l_use_seasalt_indirect).AND.  &
       Deallocate ( qgraup_n )
 
 ! end of routine Atmos_physics1
+print *, "jhan:atmos_physics1: End"
       IF (lhook) CALL dr_hook('ATMOS_PHYSICS1',zhook_out,zhook_handle)
       RETURN
       END SUBROUTINE Atmos_Physics1
